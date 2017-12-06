@@ -6,33 +6,36 @@
  * AUTHOR: Victor García                    *
  ********************************************/
 
-#include <iostream>
-#include <iostream>
+
 #include <chrono>
-#include "opencv2/core.hpp"
-#include "opencv2/features2d.hpp"
-#include "opencv2/highgui.hpp"
-#include "opencv2/xfeatures2d.hpp"
-#include "opencv2/opencv.hpp"
 #include "options.h"
+#include "detector.h"
+
 using namespace std;
 using namespace cv;
 using namespace cv::xfeatures2d;
 using namespace std::chrono;
+
 /*
  * @function main
  * @brief Main function
  */
 int main( int argc, char** argv )  {
 
-    int tot_matches;
-    Mat img_1, img_2;
-    vector<KeyPoint> keypoints_1, keypoints_2;
-    Mat descriptors_1, descriptors_2;
-    vector< DMatch > matches;
-    VideoCapture cap(0); // open the default camera
-    if (!cap.isOpened())  // check if we succeeded
-        return -1;
+    int n_matches=0, n_good=0;
+    double tot_matches=0, tot_good =0;
+    int i=0, n_img=0;
+
+    parser.Prog(argv[0]);
+
+    vector<string> file_names;
+    vector<DMatch> matches, good_matches;
+    vector<KeyPoint> keypoints[2];
+    Mat descriptors[2];
+    Mat img[2];
+    string vid_dir = "./video/";
+    string img_dir = "./image/";
+
     try{
         parser.ParseCLI(argc, argv);
     }
@@ -46,126 +49,147 @@ int main( int argc, char** argv )  {
         return 1;
     }
     catch (args::ValidationError e){
-        std::cerr << "Select at least one Feature Extractor and one Matcher" << std::endl;
-        std::cerr << parser;
+        std::cerr << "Bad imput commands" << std::endl;
+        std::cerr << "Use -h, --help command to see usage" << std::endl;
+        //std::cerr << parser;
         return 1;
     }
-    if(op_img1){
-        img_1 = imread( args::get(op_img1), IMREAD_GRAYSCALE );
-        if( !img_1.data){
-            cout<< " --(!) Error reading image 1 " << endl; 
-            cerr << parser;
-            return -1;
+    if (op_img){
+        for(const auto img_name: args::get(op_img)){
+            img[i++] = imread(img_name, IMREAD_GRAYSCALE);
+            if( !img[i-1].data){
+                cout<< " --(!) Error reading image "<< i << endl; 
+                cerr << parser;
+                return -1;
+            }
+            cout<< " -- Loaded image "<< img_name << endl;
+            if(i<1){
+                cout<< " -- Insuficient imput data "<< img_name << endl;
+                std::cerr << "Use -h, --help command to see usage" << std::endl;
+                return 1;
+            }
         }
-    }
-    if(op_img2){
-        img_2 = imread( args::get(op_img2), IMREAD_GRAYSCALE );
-        if( !img_2.data){
-            cout<< " --(!) Error reading image 1 " << endl; 
-            cerr << parser;
-            return -1;
+        if(op_sift){
+            sift_detector(img, descriptors, keypoints);
+        }else if(op_surf){
+            surf_detector(img, descriptors, keypoints);
+        }else if(op_orb){
+            orb_detector(img, descriptors, keypoints);
+        }else if(op_kaze){
+            kaze_detector(img, descriptors, keypoints);
         }
+
+        if(op_brutef){
+            BFMatcher matcher;
+            matcher.match( descriptors[0], descriptors[1], matches );
+        }else if(op_flann){
+            FlannBasedMatcher matcher;
+            matcher.match( descriptors[0], descriptors[1], matches );
+        }
+        n_matches = descriptors[0].rows;
+        // Quick calculation of max and min distances between keypoints
+        good_matches = getGoodMatches(n_matches, matches);
+        n_good = good_matches.size();
+        cout << endl;
+        cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
+        cout << "-- Good Matches      ["<< n_good <<"]"  << endl;
+        cout << "-- Accuracy  ["<< n_good*100/n_matches <<" %]"  << endl;
+        if(op_out){
+            Mat img_matches;
+            // Draw only "good" matches
+            drawMatches( img[0], keypoints[0], img[1], keypoints[1],
+                        good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
+                        vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+            // Show detected matches
+            namedWindow("Good Matches", WINDOW_NORMAL);
+            imshow( "Good Matches", img_matches );
+            waitKey(0);
+        }
+        return 1;
     }
-    if(op_vid){
-        VideoCapture vid(args::get(op_vid)); 
+    if(op_split || op_vid){
+        VideoCapture vid;
+        if(op_split)
+            vid.open(args::get(op_split));
+        else
+            vid.open(args::get(op_vid));
+        
         if(!vid.isOpened()){
             cout << "Couldn't open Video " << endl;
             return -1;
         }
+            
         double fps = vid.get(CAP_PROP_FPS);
-        cout << "Video opened \nFrames per second: "<< fps << endl;
-        namedWindow("gray",1);
-        for(;;){
-            Mat frame, gray;
-            vid >> frame; // get a new frame from camera
-            cvtColor(frame, gray, COLOR_BGR2GRAY);
-            imshow("gray", gray);
-            //if(waitKey(30)) break;
+        double fcnt = vid.get(CAP_PROP_FRAME_COUNT);
+        cout << "Video opened \nFrames per second: "<< fps << "\nFrames in video:   "<<fcnt<< endl;
+        int n=0;
+        high_resolution_clock::time_point t1 = high_resolution_clock::now();
+        for(i=0; i<fcnt; i+=fps){
+            vid.set(CAP_PROP_POS_FRAMES,i);
+            vid >> img[0];
+            cvtColor(img[0],img[0],COLOR_BGR2GRAY);
+            if(op_split){
+                imwrite("./video/frame_"+to_string(n_img/10)+to_string(n_img%10)+".jpg", img[0]);
+            }else{
+                vid.set(CAP_PROP_POS_FRAMES,i+=fps);
+                vid >> img[1];
+                cvtColor(img[1],img[1],COLOR_BGR2GRAY);
+
+                if(op_sift){
+                    sift_detector(img, descriptors, keypoints);
+                }else if(op_surf){
+                    surf_detector(img, descriptors, keypoints);
+                }else if(op_orb){
+                    orb_detector(img, descriptors, keypoints);
+                }else if(op_kaze){
+                    kaze_detector(img, descriptors, keypoints);
+                }
+
+                if(op_brutef){
+                    BFMatcher matcher;
+                    matcher.match( descriptors[0], descriptors[1], matches );
+                }else if(op_flann){
+                    FlannBasedMatcher matcher;
+                    matcher.match( descriptors[0], descriptors[1], matches );
+                }
+                n_matches = descriptors[0].rows;
+                // Quick calculation of max and min distances between keypoints
+                good_matches = getGoodMatches(n_matches, matches);
+                n_good = good_matches.size();
+                cout << "Pair  "<< n_img+1 <<" -- -- -- -- -- -- -- -- -- --"  << endl;
+                cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
+                cout << "-- Good Matches      ["<< n_good <<"]"  << endl;
+                cout << "-- Accuracy  ["<< n_good*100/n_matches <<" %]"  << endl;
+            }
+            n_img++;
+            tot_matches+=n_matches;
+            tot_good+=n_good;
+            img[0].release();
+            img[1].release();
+            good_matches.erase(good_matches.begin(), good_matches.end());
         }
+        cout << "\nTotal "<< n_img++ <<" -- -- -- -- -- -- -- -- -- --"  << endl;
+        cout << "-- Total Possible matches  ["<< tot_matches <<"]"  << endl;
+        cout << "-- Total Good Matches      ["<< tot_good <<"]"  << endl;
+        cout << "-- Total Accuracy  ["<< (int)(tot_good*100/tot_matches) <<" %]"  << endl;
+        high_resolution_clock::time_point t2 = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>( t2 - t1 ).count()/1000;
+        cout << "   Execution time: " << duration << " ms" <<endl;
         vid.release();
-        return 1; 
     }
-
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    if(op_sift){
-        // Detect the keypoints using SIFT Detector, compute the descriptors
-        Ptr<SIFT> detector = SIFT::create();
-        //detector = SIFT::create();
-        detector->detectAndCompute( img_1, Mat(), keypoints_1, descriptors_1 );
-        detector->detectAndCompute( img_2, Mat(), keypoints_2, descriptors_2 );
+    /*
+    if(op_dir){
+        cout << " OPTION NOT YET IMPLEMENTED " <<endl;
+        return 0;
+        //vector<string> file_names = read_filenames(args::get(op_dir));
+        //for(int i=0; i<file_names.size(); i+=2){
+        //    Mat img[0] = imread(vid_dir+file_names.at(i),1);
+        //    Mat img[1] = imread(vid_dir+file_names.at(i+1),1);
+        //}
     }
-    if(op_surf){
-        // Detect the keypoints using SUFR Detector, compute the descriptors
-        int minHessian = 400;
-        Ptr<SURF> detector = SURF::create();
-        detector->setHessianThreshold(minHessian);
-        detector->detectAndCompute( img_1, Mat(), keypoints_1, descriptors_1 );
-        detector->detectAndCompute( img_2, Mat(), keypoints_2, descriptors_2 );
-    }
-    if(op_orb){
-        // Detect the keypoints using ORB Detector, compute the descriptors
-        Ptr<ORB> detector = ORB::create();
-        detector->detectAndCompute( img_1, Mat(), keypoints_1, descriptors_1 );
-        detector->detectAndCompute( img_2, Mat(), keypoints_2, descriptors_2 );
-
-        // Flann needs the descriptors to be of type CV_32F
-        descriptors_1.convertTo(descriptors_1, CV_32F);
-        descriptors_2.convertTo(descriptors_2, CV_32F);
-    }
-    if(op_kaze){
-        // Detect the keypoints using ORB Detector, compute the descriptors
-        Ptr<KAZE> detector = KAZE::create();
-        detector->detectAndCompute( img_1, Mat(), keypoints_1, descriptors_1 );
-        detector->detectAndCompute( img_2, Mat(), keypoints_2, descriptors_2 );
-    }
-    // Step 2: Matching descriptor vectors using FLANN matcher
-
-    if(op_brutef){
-        BFMatcher matcher;
-        matcher.match( descriptors_1, descriptors_2, matches );
-    }
-    if(op_flann){
-        FlannBasedMatcher matcher;
-        matcher.match( descriptors_1, descriptors_2, matches );
-    }
-
-    tot_matches = descriptors_1.rows;
-
-    double max_dist = 0; double min_dist = 100;
-    // Quick calculation of max and min distances between keypoints
-    for( int i = 0; i < descriptors_1.rows; i++ ){
-        double dist = matches[i].distance;
-        if( dist < min_dist )
-            min_dist = dist;
-        if( dist > max_dist )
-            max_dist = dist;
-    }
-    // Draw only "good" matches (i.e. whose distance is less than 2*min_dist,
-    // or a small arbitary value ( 0.02 ) in the event that min_dist is very
-    // small)
-    vector< DMatch > good_matches;
-    for( int i = 0; i < descriptors_1.rows; i++ ){
-        if( matches[i].distance <= max(3*min_dist, 0.02) ){
-            good_matches.push_back( matches[i]);
-        }
-    }
-    //-- Draw only "good" matches
-    Mat img_matches;
-    drawMatches( img_1, keypoints_1, img_2, keypoints_2,
-                good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
-                vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-    // Show detected matches
-    namedWindow("Good Matches", WINDOW_NORMAL);
-    imshow( "Good Matches", img_matches );
-
-    int i = (int)good_matches.size();
-    cout << "-- Total Features detected ["<< tot_matches <<"]"  << endl;
-    cout << "-- Number of Good Matches  ["<< i <<"]"  << endl;
-    cout << "-- Accuracy  ["<< i*100/tot_matches <<" %]"  << endl;
-
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>( t2 - t1 ).count()/1000;
-    cout << "   Execution time: " << duration << " ms" <<endl;
-    waitKey(0);
+    */
     return 0;
 }
+
+
+
