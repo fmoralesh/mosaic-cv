@@ -7,3 +7,8 @@ mosaic-generation
 # Data
 image
 video
+*.MOV
+
+# CMake
+build
+

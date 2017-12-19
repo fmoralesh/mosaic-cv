@@ -1,11 +1,10 @@
 /********************************************
- * FILE NAME: options.h                     *
+ * FILE NAME: main.cpp                     *
  * DESCRIPTION: Contains the main code for  *
  *              feature match comparison    *
  *              images                      *
  * AUTHOR: Victor García                    *
  ********************************************/
-
 
 #include <chrono>
 #include "options.h"

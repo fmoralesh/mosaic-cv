@@ -42,7 +42,7 @@ void kaze_detector(Mat img[2], Mat descriptors[2], vector<KeyPoint> keypoints[2]
 vector<DMatch> getGoodMatches(int n_matches, vector<DMatch> matches){
     vector<DMatch> good_matches;
 
-    double max_dist = 0; double min_dist = 100;
+    double max_dist = 0, min_dist = 100;
     for( int i = 0; i < n_matches; i++ ){
         double dist = matches[i].distance;
         if( dist < min_dist )
