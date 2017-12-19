@@ -22,13 +22,13 @@ Type the following command to see correct usage:
 ```bash
 ./mosaic -h
 ```
-### Usage example
+### Usage examples:
 ```bash
-./mosaic -i data/image1.jpg -i data/image2.jpg --sift -f -o
+./mosaic -i image1.jpg -i image2.jpg --sift -f -o
 ```
 Detect and compute the features between two input images with Sift detector and flann matcher, aditionally shows the matches points.
 
 ```bash
-./mosaic -v data/video.mp4 --sift -b
+./mosaic -v video.mp4 --sift -b
 ```
 Detect and compute the features between all the pairs of images generated from a video file, the selection method is fixed to one frame per second. Sift detector and BruteForce matcher are used.
