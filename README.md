@@ -2,8 +2,8 @@
 Monocular video based Mosaic Generation System for mobile robots implemented in OpenCV 3.2.
 
 ## Requirements
-OpenCV 3.0+
-OpenCV extra modules 3.0+
+- *OpenCV 3.0+*
+- *OpenCV extra modules 3.0+*
 
 ## How to compile?
 Provided with this repo is a CMakeLists.txt file, which you can use to directly compile the code as follows:
