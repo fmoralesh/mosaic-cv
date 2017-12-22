@@ -1,6 +1,5 @@
 # mosaic-generation
-Monocular video based Mosaic Generation System for mobile robots.
-This is an OpenCV 3.0 based implementation algorithm
+Monocular video based Mosaic Generation System for mobile robots implemented in OpenCV 3.2.
 
 ## Requirements
 OpenCV 3.0
