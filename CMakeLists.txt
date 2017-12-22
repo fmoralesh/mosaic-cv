@@ -8,7 +8,7 @@ file(GLOB mosaic-cv
     "*.hxx"
     "*.cpp"
 )
-add_executable( mosaic ${mosaic-cv} )
-target_compile_options(mosaic PUBLIC -std=c++11)
-target_link_libraries( mosaic ${OpenCV_LIBS} )
+add_executable( fcomp ${mosaic-cv} )
+target_compile_options(fcomp PUBLIC -std=c++11)
+target_link_libraries( fcomp ${OpenCV_LIBS} )
 
