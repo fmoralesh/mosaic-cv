@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project( mosaic-opencv )
-find_package( OpenCV 3.0 REQUIRED )
+find_package( OpenCV 3.0 REQUIRED xfeatures2d)
 
 include_directories( ${OpenCV_INCLUDE_DIRS} )
-
 file(GLOB mosaic-cv
     "*.h"
     "*.hxx"
