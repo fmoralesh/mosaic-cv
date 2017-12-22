@@ -1,5 +1,5 @@
 # mosaic-generation
-Monocular video based Mosaic Generation System for mobile robots implemented in OpenCV 3.2.
+Monocular video based Mosaic Generation System for mobile robots implemented in OpenCV 3.2. At the moment is only implemented a performance comparison module of four feature extractors (Sift, Surf, Orb and Kaze).
 
 ## Requirements
 - *OpenCV 3.0+*
