@@ -2,13 +2,11 @@
 .vscode
 
 # Compiled Object files
-mosaic-generation
-
-# Data
-image
-video
-*.MOV
-
-# CMake
+mosaic-opencv
 build
 
+# Data files
+image
+video
+frames
+*.MOV
