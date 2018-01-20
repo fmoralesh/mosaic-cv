@@ -4,40 +4,6 @@ using namespace std;
 using namespace cv;
 using namespace cv::xfeatures2d;
 
-void sift_detector(Mat img[2], Mat descriptors[2], vector<KeyPoint> keypoints[2]){
-    // Detect the keypoints using SIFT Detector, compute the descriptors
-    Ptr<SIFT> detector = SIFT::create();
-
-    detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-    detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
-}
-
-void surf_detector(Mat img[2], Mat descriptors[2], vector<KeyPoint> keypoints[2]){
-    // Detect the keypoints using SUFR Detector, compute the descriptors
-    int minHessian = 400;
-    Ptr<SURF> detector = SURF::create();
-    detector->setHessianThreshold(minHessian);
-    detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-    detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
-}
-
-void orb_detector(Mat img[2], Mat descriptors[2], vector<KeyPoint> keypoints[2]){
-    // Detect the keypoints using ORB Detector, compute the descriptors
-    Ptr<ORB> detector = ORB::create();
-    detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-    detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
-
-    // Flann needs the descriptors to be of type CV_32F
-    descriptors[0].convertTo(descriptors[0], CV_32F);
-    descriptors[1].convertTo(descriptors[1], CV_32F);
-}
-
-void kaze_detector(Mat img[2], Mat descriptors[2], vector<KeyPoint> keypoints[2]){
-    // Detect the keypoints using ORB Detector, compute the descriptors
-    Ptr<KAZE> detector = KAZE::create();
-    detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-    detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
-}
 
 vector<DMatch> getGoodMatches(int n_matches, vector<DMatch> matches){
     vector<DMatch> good_matches;
