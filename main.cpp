@@ -6,19 +6,17 @@
  * AUTHOR: Victor García                    *
  ********************************************/
 
-#include <chrono>
 #include "options.h"
 #include "detector.h"
 #include "preprocessing.h"
 
 /// Constant definitios
-#define TARGET_WIDTH	640        //< Resized image width
-#define TARGET_HEIGHT	480        //< Resized image height
+#define TARGET_WIDTH	640       
+#define TARGET_HEIGHT	480       
 
 using namespace std;
 using namespace cv;
 using namespace cv::xfeatures2d;
-using namespace std::chrono;
 
 double t;
 /*
@@ -27,9 +25,10 @@ double t;
  */
 int main( int argc, char** argv )  {
 
-    int n_matches=0, n_good=0;
     double tot_matches=0, tot_good =0;
+    int n_matches=0, n_good=0;
     int i=0, n_img=0;
+    int nIter = 0;
 
     parser.Prog(argv[0]);
 
@@ -38,30 +37,53 @@ int main( int argc, char** argv )  {
     vector<KeyPoint> keypoints[2];
     Mat descriptors[2];
     Mat img[2];
-    string vid_dir = "./video/";
-    string img_dir = "./image/";
 
     try{
         parser.ParseCLI(argc, argv);
     }
     catch (args::Help){
         std::cout << parser;
-        return 0;
+        return 1;
     }
     catch (args::ParseError e){
         std::cerr << e.what() << std::endl;
-        std::cerr << parser;
+        std::cerr << "Use -h, --help command to see usage" << std::endl;
+        //std::cerr << parser;
         return 1;
     }
     catch (args::ValidationError e){
         std::cerr << "Bad imput commands" << std::endl;
         std::cerr << "Use -h, --help command to see usage" << std::endl;
-        //std::cerr << parser;
         return 1;
     }
+    
+    int minHessian = 400;
+    Ptr<Feature2D> detector;
+    Ptr<DescriptorMatcher> matcher;
+
+    // Create the desired feature extractor based on imput commands
+    if(op_sift){
+        detector = SIFT::create(minHessian);
+    }else if(op_surf){
+        detector = SURF::create(minHessian);
+    }else if(op_orb){
+        detector = ORB::create(minHessian);
+    }else if(op_kaze){
+        detector = KAZE::create(minHessian);
+    }
+    // Create the desired feature matcher based on imput commands
+    if(op_brutef){
+        matcher = FlannBasedMatcher::create();
+    }else if(op_flann){
+        matcher = BFMatcher::create();
+    }
+
+    // Two images as imput
     if (op_img){
+        t = (double) getTickCount();
+        // Check for two image flags and patchs (-i imageName)
         for(const auto img_name: args::get(op_img)){
-            img[i++] = imread(img_name, IMREAD_GRAYSCALE);
+            img[i++] = imread(img_name, IMREAD_COLOR);
             if( !img[i-1].data){
                 cout<< " --(!) Error reading image "<< i << endl; 
                 cerr << parser;
@@ -71,117 +93,114 @@ int main( int argc, char** argv )  {
             if(i<1){
                 cout<< " -- Insuficient imput data "<< img_name << endl;
                 std::cerr << "Use -h, --help command to see usage" << std::endl;
-                return 1;
+                return -1;
             }
+            // Two images loaded successfully
         }
+        // Resize the images to 640 x 480
         resize(img[0], img[0], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
         resize(img[1], img[1], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
-
-        if(op_sift){
-            sift_detector(img, descriptors, keypoints);
-        }else if(op_surf){
-            surf_detector(img, descriptors, keypoints);
-        }else if(op_orb){
-            orb_detector(img, descriptors, keypoints);
-        }else if(op_kaze){
-            kaze_detector(img, descriptors, keypoints);
+        
+        // Apply pre-processing algorithm if selected
+        if(op_pre){
+            colorChannelStretch(img[0], img[0], 1, 99);
+            colorChannelStretch(img[1], img[1], 1, 99);
         }
+        // Conver images to gray
+        cvtColor(img[0],img[0],COLOR_BGR2GRAY);
+        cvtColor(img[1],img[1],COLOR_BGR2GRAY);
 
-        if(op_brutef){
-            BFMatcher matcher;
-            matcher.match( descriptors[0], descriptors[1], matches );
-        }else if(op_flann){
-            FlannBasedMatcher matcher;
-            matcher.match( descriptors[0], descriptors[1], matches );
-        }
+        // Detect the keypoints using desired Detector and compute the descriptors
+        detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
+        detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
+        // Flann matcher needs the descriptors to be of type CV_32F
+        descriptors[0].convertTo(descriptors[0], CV_32F);
+        descriptors[1].convertTo(descriptors[1], CV_32F);
+
+        // Match the keypoints for input images
+        matcher->match( descriptors[0], descriptors[1], matches );
+        
         n_matches = descriptors[0].rows;
-        // Quick calculation of max and min distances between keypoints
+        // Discard the bad matches (outliers)
         good_matches = getGoodMatches(n_matches, matches);
         n_good = good_matches.size();
+
         cout << endl;
         cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
         cout << "-- Good Matches      ["<< n_good <<"]"  << endl;
         cout << "-- Accuracy  ["<< n_good*100/n_matches <<" %]"  << endl;
+        t = 1000 * ((double) getTickCount() - t) / getTickFrequency();        
+        cout << "   Execution time: " << t << " ms" <<endl;
+        // for output command ( -o )
         if(op_out){
             Mat img_matches;
             // Draw only "good" matches
             drawMatches( img[0], keypoints[0], img[1], keypoints[1],
                         good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
                         vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-            // Show detected matches
+            // Show matches
             namedWindow("Good Matches", WINDOW_NORMAL);
             imshow( "Good Matches", img_matches );
             waitKey(0);
         }
         return 1;
     }
-    if(op_split || op_vid){
+    // video file as imput
+    if(op_vid){
         VideoCapture vid;
-        if(op_split)
-            vid.open(args::get(op_split));
-        else
-            vid.open(args::get(op_vid));
+        vid.open(args::get(op_vid));
         
         if(!vid.isOpened()){
+            // Error openning the video
             cout << "Couldn't open Video " << endl;
             return -1;
         }
-            
+        // Get the video paramenters. frames per second and frames number
         double fps = vid.get(CAP_PROP_FPS);
         double fcnt = vid.get(CAP_PROP_FRAME_COUNT);
         cout << "Video opened \nFrames per second: "<< fps << "\nFrames in video:   "<<fcnt<< endl;
-        int n=0;
-        //high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
         t = (double) getTickCount();
         for(i=0; i<fcnt; i+=fps){
             vid.set(CAP_PROP_POS_FRAMES,i);
             vid >> img[0];
+            vid.set(CAP_PROP_POS_FRAMES,i+=fps);
+            vid >> img[1];
 
+            // Resize the images to 640 x 480
             resize(img[0], img[0], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
+            resize(img[1], img[1], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
+            
+            // Apply pre-processing algorithm if selected
             if(op_pre){
                 colorChannelStretch(img[0], img[0], 1, 99);
+                colorChannelStretch(img[1], img[1], 1, 99);
             }
-            
+            // Conver images to gray
             cvtColor(img[0],img[0],COLOR_BGR2GRAY);
+            cvtColor(img[1],img[1],COLOR_BGR2GRAY);
             // imshow("TEST",img[0]);
             // waitKey(0);
-            if(op_split){
-                imwrite("./video/frame_"+to_string(n_img/10)+to_string(n_img%10)+".jpg", img[0]);
-            }else{
-                vid.set(CAP_PROP_POS_FRAMES,i+=fps);
-                vid >> img[1];
-                resize(img[1], img[1], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
-                if(op_pre){
-                    colorChannelStretch(img[1], img[1], 1, 99);
-                }
-                cvtColor(img[1],img[1],COLOR_BGR2GRAY);
+            
+            // Detect the keypoints using desired Detector and compute the descriptors
+            detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
+            detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
+            // Flann matcher needs the descriptors to be of type CV_32F
+            descriptors[0].convertTo(descriptors[0], CV_32F);
+            descriptors[1].convertTo(descriptors[1], CV_32F);
 
-                if(op_sift){
-                    sift_detector(img, descriptors, keypoints);
-                }else if(op_surf){
-                    surf_detector(img, descriptors, keypoints);
-                }else if(op_orb){
-                    orb_detector(img, descriptors, keypoints);
-                }else if(op_kaze){
-                    kaze_detector(img, descriptors, keypoints);
-                }
+            // Match the keypoints for input images
+            matcher->match( descriptors[0], descriptors[1], matches );
 
-                if(op_brutef){
-                    BFMatcher matcher;
-                    matcher.match( descriptors[0], descriptors[1], matches );
-                }else if(op_flann){
-                    FlannBasedMatcher matcher;
-                    matcher.match( descriptors[0], descriptors[1], matches );
-                }
-                n_matches = descriptors[0].rows;
-                // Quick calculation of max and min distances between keypoints
-                good_matches = getGoodMatches(n_matches, matches);
-                n_good = good_matches.size();
-                cout << "Pair  "<< n_img+1 <<" -- -- -- -- -- -- -- -- -- --"  << endl;
-                cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
-                cout << "-- Good Matches      ["<< n_good <<"]"  << endl;
-                cout << "-- Accuracy  ["<< n_good*100/n_matches <<" %]"  << endl;
-            }
+            n_matches = descriptors[0].rows;
+            // Quick calculation of max and min distances between keypoints
+            good_matches = getGoodMatches(n_matches, matches);
+            n_good = good_matches.size();
+            cout << "Pair  "<< n_img+1 <<" -- -- -- -- -- -- -- -- -- --"  << endl;
+            cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
+            cout << "-- Good Matches      ["<< n_good <<"]"  << endl;
+            cout << "-- Accuracy  ["<< n_good*100/n_matches <<" %]"  << endl;
+
             n_img++;
             tot_matches+=n_matches;
             tot_good+=n_good;
@@ -205,27 +224,30 @@ int main( int argc, char** argv )  {
         for(int i=0; i<file_names.size()-1; i+=2){
             img[0] = imread(dir_ent+"/"+file_names.at(i),1);
             img[1] = imread(dir_ent+"/"+file_names.at(i+1),1);
-
-            cvtColor(img[0],img[0],COLOR_RGB2GRAY);
-            cvtColor(img[1],img[1],COLOR_RGB2GRAY);
-
-            if(op_sift){
-                sift_detector(img, descriptors, keypoints);
-            }else if(op_surf){
-                surf_detector(img, descriptors, keypoints);
-            }else if(op_orb){
-                orb_detector(img, descriptors, keypoints);
-            }else if(op_kaze){
-                kaze_detector(img, descriptors, keypoints);
+        
+            // Resize the images to 640 x 480
+            resize(img[0], img[0], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
+            resize(img[1], img[1], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
+            
+            // Apply pre-processing algorithm if selected
+            if(op_pre){
+                colorChannelStretch(img[0], img[0], 1, 99);
+                colorChannelStretch(img[1], img[1], 1, 99);
             }
+            // Conver images to gray
+            cvtColor(img[0],img[0],COLOR_BGR2GRAY);
+            cvtColor(img[1],img[1],COLOR_BGR2GRAY);
 
-            if(op_brutef){
-                BFMatcher matcher;
-                matcher.match( descriptors[0], descriptors[1], matches );
-            }else if(op_flann){
-                FlannBasedMatcher matcher;
-                matcher.match( descriptors[0], descriptors[1], matches );
-            }
+            // Detect the keypoints using desired Detector and compute the descriptors
+            detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
+            detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
+            // Flann matcher needs the descriptors to be of type CV_32F
+            descriptors[0].convertTo(descriptors[0], CV_32F);
+            descriptors[1].convertTo(descriptors[1], CV_32F);
+
+            // Match the keypoints for input images
+            matcher->match( descriptors[0], descriptors[1], matches );
+
             n_matches = descriptors[0].rows;
             // Quick calculation of max and min distances between keypoints
             good_matches = getGoodMatches(n_matches, matches);
