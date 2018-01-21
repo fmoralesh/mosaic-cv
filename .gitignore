@@ -9,5 +9,6 @@ build
 # Data files
 image
 video
+html
 frames
 *.MOV

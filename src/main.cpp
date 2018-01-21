@@ -1,10 +1,11 @@
-/********************************************
- * FILE NAME: main.cpp                     *
- * DESCRIPTION: Contains the main code for  *
- *              feature match comparison    *
- *              images                      *
- * AUTHOR: Victor García                    *
- ********************************************/
+/**
+ * @file main.h
+ * @brief Contais the main code for feature extraction and match comparison
+ * @version 1.0
+ * @date 20/01/2018
+ * @author Victor Garcia
+ * @title Main code
+ */
 
 #include "options.h"
 #include "detector.h"
@@ -14,11 +15,13 @@
 #define TARGET_WIDTH	640       
 #define TARGET_HEIGHT	480       
 
+/// User namespaces
 using namespace std;
 using namespace cv;
 using namespace cv::xfeatures2d;
 
 double t;
+
 /*
  * @function main
  * @brief Main function
@@ -221,6 +224,7 @@ int main( int argc, char** argv )  {
     if(op_dir){
         string dir_ent = args::get(op_dir);
         vector<string> file_names = read_filenames(dir_ent);
+        cout << file_names[0] << endl;
         for(int i=0; i<file_names.size()-1; i+=2){
             img[0] = imread(dir_ent+"/"+file_names.at(i),1);
             img[1] = imread(dir_ent+"/"+file_names.at(i+1),1);
@@ -261,8 +265,6 @@ int main( int argc, char** argv )  {
         cout << "-- Total Possible matches  ["<< tot_matches <<"]"  << endl;
         cout << "-- Total Good Matches      ["<< tot_good <<"]"  << endl;
         cout << "-- Total Accuracy  ["<< (int)(tot_good*100/tot_matches) <<" %]"  << endl;
-        //high_resolution_clock::time_point t2 = high_resolution_clock::now();
-        //auto duration = duration_cast<microseconds>( t2 - t1 ).count()/1000;
         t = 1000 * ((double) getTickCount() - t) / getTickFrequency();        
         cout << "   Execution time: " << t << " ms" <<endl;
     }

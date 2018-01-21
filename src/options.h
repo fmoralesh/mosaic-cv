@@ -1,17 +1,15 @@
-/********************************************
- * FILE NAME: options.h                     *
- * DESCRIPTION: Contains the argument       *
- *              parser flags                *
- *              images                      *
- * AUTHOR: Victor García                    *
- ********************************************/
+/**
+ * @file options.h
+ * @brief Argument parser options
+ * @version 1.0
+ * @date 20/01/2018
+ * @author Victor Garcia
+ */
 
 #ifndef OPTIONS
 #define OPTIONS
 
 #include "args.hxx"
-#include <unordered_map>
-#include <functional>
 
 args::ArgumentParser parser("Feature Detectors comparison", "Author: Victor Garcia");
 args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});

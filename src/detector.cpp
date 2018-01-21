@@ -4,7 +4,6 @@ using namespace std;
 using namespace cv;
 using namespace cv::xfeatures2d;
 
-
 vector<DMatch> getGoodMatches(int n_matches, vector<DMatch> matches){
     vector<DMatch> good_matches;
 
