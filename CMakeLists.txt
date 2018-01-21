@@ -3,7 +3,7 @@ project( mosaic-opencv )
 find_package( OpenCV 3.0 REQUIRED xfeatures2d)
 
 include_directories( ${OpenCV_INCLUDE_DIRS} )
-file(GLOB mosaic-cv
+file(GLOB mosaic-cv/src
     "*.h"
     "*.hxx"
     "*.cpp"
