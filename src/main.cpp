@@ -66,13 +66,13 @@ int main( int argc, char** argv )  {
 
     // Create the desired feature extractor based on imput commands
     if(op_sift){
-        detector = SIFT::create(minHessian);
+        detector = SIFT::create();
     }else if(op_surf){
-        detector = SURF::create(minHessian);
+        detector = SURF::create();
     }else if(op_orb){
-        detector = ORB::create(minHessian);
+        detector = ORB::create();
     }else if(op_kaze){
-        detector = KAZE::create(minHessian);
+        detector = KAZE::create();
     }
     // Create the desired feature matcher based on imput commands
     if(op_brutef){
