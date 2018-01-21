@@ -3,10 +3,10 @@ project( mosaic-opencv )
 find_package( OpenCV 3.0 REQUIRED xfeatures2d)
 
 include_directories( ${OpenCV_INCLUDE_DIRS} )
-file(GLOB mosaic-cv/src
-    "*.h"
-    "*.hxx"
-    "*.cpp"
+file(GLOB mosaic-cv
+    "src/*.h"
+    "src/*.hxx"
+    "src/*.cpp"
 )
 add_executable( fcomp ${mosaic-cv} )
 target_compile_options(fcomp PUBLIC -std=c++11)
