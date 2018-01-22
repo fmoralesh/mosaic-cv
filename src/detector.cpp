@@ -5,20 +5,28 @@ using namespace cv;
 using namespace cv::xfeatures2d;
 
 // See description in header file
-std::vector<DMatch> getGoodMatches(const std::vector<cv::DMatch> matches){
+std::vector<DMatch> getGoodMatches(int n_kp, std::vector<std::vector<cv::DMatch> > matches){
     vector<DMatch> good_matches;
-    int n_matches = matches.size();
-    double min_dist = 100;
-    // get the minimun distance, corresponding to the strongest matches
-    for( int i = 0; i < n_matches; i++ ){
-        double dist = matches[i].distance;
-        if( dist < min_dist )
-            min_dist = dist;
-    }
-    // Keep with matches with similar distance to the best one
-    for( int i = 0; i < n_matches; i++ ){
-        if( matches[i].distance <= max(2*min_dist, 0.02) ){
-            good_matches.push_back( matches[i]);
+    // int n_matches = matches.size();
+    // double min_dist = 100;
+    // // get the minimun distance, corresponding to the strongest matches
+    // for( int i = 0; i < n_matches; i++ ){
+    //     double dist = matches[i].distance;
+    //     if( dist < min_dist )
+    //         min_dist = dist;
+    // }
+    // // Keep with matches with similar distance to the best one
+    // for( int i = 0; i < n_matches; i++ ){
+    //     if( matches[i].distance <= max(2*min_dist, 0.02) ){
+    //         good_matches.push_back( matches[i]);
+    //     }
+    // }
+    for (int i = 0; i < std::min(n_kp, (int)matches.size()); i++) {
+        if ((matches[i][0].distance < 0.6 * (matches[i][1].distance)) &&
+            ((int) matches[i].size() <= 2 && (int) matches[i].size() > 0)) {
+            // take the first result only if its distance is smaller than 0.6*second_best_dist
+            // that means this descriptor is ignored if the second distance is bigger or of similar
+            good_matches.push_back(matches[i][0]);
         }
     }
     return good_matches;
@@ -50,7 +58,7 @@ std::vector<string> read_filenames(const std::string dir_ent){
 
 // See description in header file
 void gridDetector(const Mat src[2], Feature2D* detector, vector<KeyPoint> keypoints[2], Mat descriptors[2]){
-    int stepx=64, stepy=48;
+    int stepx=102, stepy=76;
     Rect roi(0, 0, stepx, stepy);
     vector<KeyPoint> aux_keypoint;
     Mat aux_descriptor(0, detector->descriptorSize(), detector->descriptorType());

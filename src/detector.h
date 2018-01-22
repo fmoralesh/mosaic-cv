@@ -12,6 +12,8 @@
 #include <vector>
 #include <dirent.h>
 #include <iostream>
+#include <stdlib.h>
+#include <algorithm>
 #include "opencv2/xfeatures2d.hpp"
 #include "opencv2/features2d.hpp"
 #include "opencv2/core.hpp"
@@ -25,7 +27,7 @@
  * @param matches Vector container all the Opencv Matches
  * @return vector<cv::DMatch> Vector container good Opencv Matches
  */
-std::vector<cv::DMatch> getGoodMatches(const std::vector<cv::DMatch> matches);
+std::vector<cv::DMatch> getGoodMatches(const int n_kp, const std::vector<std::vector<cv::DMatch> > matches);
 
 /**
  * @function read_filenames(std::string dir_ent)
@@ -36,11 +38,12 @@ std::vector<cv::DMatch> getGoodMatches(const std::vector<cv::DMatch> matches);
 std::vector<std::string> read_filenames(const std::string dir_ent);
 
 /**
- * @function gridDetector(cv::Mat src, std::vector<KeyPoint> keypoint, cv::Mat Descriptor)
  * @brief 
+ * 
  * @param src 
- * @param keypoint 
- * @param Descriptor 
+ * @param detector 
+ * @param keypoints 
+ * @param descriptors 
  */
 void gridDetector(const cv::Mat src[2], cv::Feature2D* detector, std::vector<cv::KeyPoint> keypoints[2], cv::Mat descriptors[2]);
 

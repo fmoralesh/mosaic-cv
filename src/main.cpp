@@ -12,8 +12,8 @@
 #include "preprocessing.h"
 
 /// Dimensions to resize images
-#define TARGET_WIDTH	640     
-#define TARGET_HEIGHT	480 
+#define TARGET_WIDTH	1020//640     
+#define TARGET_HEIGHT	760//480 
 
 /// User namespaces
 using namespace std;
@@ -48,7 +48,8 @@ int main( int argc, char** argv )  {
     parser.Prog(argv[0]);
 
     vector<string> file_names;
-    vector<DMatch> matches, good_matches;
+    vector<vector<DMatch> > matches;
+    vector<DMatch>  good_matches;
     vector<KeyPoint> keypoints[2];
     Mat descriptors[2];
     Mat img[2];
@@ -139,10 +140,10 @@ int main( int argc, char** argv )  {
         descriptors[1].convertTo(descriptors[1], CV_32F);
 
         // Match the keypoints for input images
-        matcher->match( descriptors[0], descriptors[1], matches );
+        matcher->knnMatch( descriptors[0], descriptors[1], matches, 2);
         n_matches = descriptors[0].rows;
         // Discard the bad matches (outliers)
-        good_matches = getGoodMatches(matches);
+        good_matches = getGoodMatches(keypoints[0].size()-1, matches);
         //good_matches = matches;
         n_good = good_matches.size();
 
@@ -214,11 +215,11 @@ int main( int argc, char** argv )  {
             descriptors[1].convertTo(descriptors[1], CV_32F);
 
             // Match the keypoints for input images
-            matcher->match( descriptors[0], descriptors[1], matches );
+            matcher->knnMatch( descriptors[0], descriptors[1], matches, 2);
 
             n_matches = descriptors[0].rows;
             // Quick calculation of max and min distances between keypoints
-            good_matches = getGoodMatches(matches);
+            good_matches = getGoodMatches(keypoints[0].size()-1, matches);
             n_good = good_matches.size();
             cout << "Pair  "<< n_img+1 <<" -- -- -- -- -- -- -- -- -- --"  << endl;
             cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
@@ -276,11 +277,11 @@ int main( int argc, char** argv )  {
             descriptors[1].convertTo(descriptors[1], CV_32F);
 
             // Match the keypoints for input images
-            matcher->match( descriptors[0], descriptors[1], matches );
+            matcher->knnMatch( descriptors[0], descriptors[1], matches, 2);
 
             n_matches = descriptors[0].rows;
             // Quick calculation of max and min distances between keypoints
-            good_matches = getGoodMatches(matches);
+            good_matches = getGoodMatches(keypoints[0].size()-1, matches);
             n_good = good_matches.size();
             cout << "Pair  "<< ++i <<" -- -- -- -- -- -- -- -- -- --"  << endl;
             cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
