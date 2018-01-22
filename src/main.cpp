@@ -11,24 +11,36 @@
 #include "detector.h"
 #include "preprocessing.h"
 
-/// Constant definitios
-#define TARGET_WIDTH	640       
-#define TARGET_HEIGHT	480       
+/// Dimensions to resize images
+#define TARGET_WIDTH	640     
+#define TARGET_HEIGHT	480 
 
 /// User namespaces
 using namespace std;
 using namespace cv;
 using namespace cv::xfeatures2d;
 
-double t;
-
 /*
  * @function main
  * @brief Main function
+ * @detail Compute the feature extraction and match using the desired algorithm.
+ * Can perform the algorithm with:
+ * - Two images
+ * - Video
+ * - A set of frames
+ * Using the following extractors: 
+ * - Sift
+ * - Surf
+ * - Orb
+ * - Kaze
+ * And the folowing matchers: 
+ * - Brute force
+ * - Flann
  */
 int main( int argc, char** argv )  {
 
     double tot_matches=0, tot_good =0;
+    double t;
     int n_matches=0, n_good=0;
     int i=0, n_img=0;
     int nIter = 0;
