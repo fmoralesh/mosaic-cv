@@ -75,9 +75,9 @@ int main( int argc, char** argv )  {
         detector = KAZE::create();
     }
     // Create the desired feature matcher based on imput commands
-    if(op_brutef){
+    if(op_flann){
         matcher = FlannBasedMatcher::create();
-    }else if(op_flann){
+    }else if(op_brutef){
         matcher = BFMatcher::create();
     }
 
