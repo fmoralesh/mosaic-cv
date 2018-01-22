@@ -225,6 +225,7 @@ int main( int argc, char** argv )  {
         string dir_ent = args::get(op_dir);
         vector<string> file_names = read_filenames(dir_ent);
         cout << file_names[0] << endl;
+        t = (double) getTickCount();
         for(int i=0; i<file_names.size()-1; i+=2){
             img[0] = imread(dir_ent+"/"+file_names.at(i),1);
             img[1] = imread(dir_ent+"/"+file_names.at(i+1),1);
