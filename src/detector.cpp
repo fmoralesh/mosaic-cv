@@ -4,27 +4,29 @@ using namespace std;
 using namespace cv;
 using namespace cv::xfeatures2d;
 
-vector<DMatch> getGoodMatches(int n_matches, vector<DMatch> matches){
+// See description in header file
+std::vector<DMatch> getGoodMatches(const std::vector<cv::DMatch> matches){
     vector<DMatch> good_matches;
-
-    double max_dist = 0, min_dist = 100;
+    int n_matches = matches.size();
+    double min_dist = 100;
+    // get the minimun distance, corresponding to the strongest matches
     for( int i = 0; i < n_matches; i++ ){
         double dist = matches[i].distance;
         if( dist < min_dist )
             min_dist = dist;
-        if( dist > max_dist )
-            max_dist = dist;
     }
+    // Keep with matches with similar distance to the best one
     for( int i = 0; i < n_matches; i++ ){
         if( matches[i].distance <= max(2*min_dist, 0.02) ){
             good_matches.push_back( matches[i]);
         }
     }
-
     return good_matches;
 }
 
-vector<string> read_filenames(string dir_ent){
+
+// See description in header file
+std::vector<string> read_filenames(const std::string dir_ent){
     vector<string> file_names;
     DIR *dir;
     struct dirent *ent;
@@ -43,4 +45,36 @@ vector<string> read_filenames(string dir_ent){
     file_names.erase(file_names.begin(), file_names.begin()+2);
 
     return file_names;
+}
+
+
+// See description in header file
+void gridDetector(const Mat src[2], Feature2D* detector, vector<KeyPoint> keypoints[2], Mat descriptors[2]){
+    int stepx=64, stepy=48;
+    Rect roi(0, 0, stepx, stepy);
+    vector<KeyPoint> aux_keypoint;
+    Mat aux_descriptor(0, detector->descriptorSize(), detector->descriptorType());
+    // Define the number of columns based on descriptor type
+    descriptors[0].create(0, detector->descriptorSize(), detector->descriptorType());
+
+    // Detect keypoints in first image in sections of size stepx * stepy
+    // number of iterations fixed to 10x10 -> 10*64 x 10*48 = TARGET_WIDHT x TARGET_HEIGHT
+    for(int i=0; i<10; i++){
+        for(int j=0; j<10; j++){
+            // move the region of interest to the next section
+            roi.x = stepx*i;
+            roi.y = stepy*j;
+            detector->detectAndCompute( src[0](roi), Mat(), aux_keypoint, aux_descriptor);
+            // save the new descriptors in the original descriptors matrix
+            vconcat(descriptors[0], aux_descriptor, descriptors[0]);
+            // save the new keypoints in the original Keypoints vector
+            for(auto kp: aux_keypoint){
+                kp.pt.x += stepx*i;
+                kp.pt.y += stepy*j;
+                keypoints[0].push_back(kp);
+            }
+        }
+    }
+    // Compute the keypoints and descriptors of the second image
+    detector->detectAndCompute( src[1], Mat(), keypoints[1], descriptors[1]);
 }

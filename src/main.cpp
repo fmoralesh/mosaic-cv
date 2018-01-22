@@ -93,12 +93,12 @@ int main( int argc, char** argv )  {
                 return -1;
             }
             cout<< " -- Loaded image "<< img_name << endl;
-            if(i<1){
-                cout<< " -- Insuficient imput data "<< img_name << endl;
-                std::cerr << "Use -h, --help command to see usage" << std::endl;
-                return -1;
-            }
             // Two images loaded successfully
+        }
+        if(i<2){
+            cout<< " -- Insuficient imput data " << endl;
+            std::cerr << "Use -h, --help command to see usage" << std::endl;
+            return -1;
         }
         // Resize the images to 640 x 480
         resize(img[0], img[0], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
@@ -114,18 +114,24 @@ int main( int argc, char** argv )  {
         cvtColor(img[1],img[1],COLOR_BGR2GRAY);
 
         // Detect the keypoints using desired Detector and compute the descriptors
-        detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-        detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
+        // detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
+        // detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
+        gridDetector(img, detector, keypoints, descriptors);
+
+        if(!keypoints[0].size() || !keypoints[1].size()){
+            cout << "No Key points Found" <<  endl;
+            return -1;
+        }
         // Flann matcher needs the descriptors to be of type CV_32F
         descriptors[0].convertTo(descriptors[0], CV_32F);
         descriptors[1].convertTo(descriptors[1], CV_32F);
 
         // Match the keypoints for input images
         matcher->match( descriptors[0], descriptors[1], matches );
-        
         n_matches = descriptors[0].rows;
         // Discard the bad matches (outliers)
-        good_matches = getGoodMatches(n_matches, matches);
+        good_matches = getGoodMatches(matches);
+        //good_matches = matches;
         n_good = good_matches.size();
 
         cout << endl;
@@ -170,7 +176,7 @@ int main( int argc, char** argv )  {
             vid.set(CAP_PROP_POS_FRAMES,i+=fps);
             vid >> img[1];
 
-            // Resize the images to 640 x 480
+            // Resize the images to 640 x 480 = TARGET_WIDTH x TARGET_HEIGHT
             resize(img[0], img[0], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
             resize(img[1], img[1], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
             
@@ -182,12 +188,15 @@ int main( int argc, char** argv )  {
             // Conver images to gray
             cvtColor(img[0],img[0],COLOR_BGR2GRAY);
             cvtColor(img[1],img[1],COLOR_BGR2GRAY);
-            // imshow("TEST",img[0]);
-            // waitKey(0);
             
             // Detect the keypoints using desired Detector and compute the descriptors
-            detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-            detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
+            // detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
+            // detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
+            gridDetector(img, detector, keypoints, descriptors);
+            if(!keypoints[0].size() || !keypoints[1].size()){
+                cout << "No Key points Found" <<  endl;
+                break;
+            }   
             // Flann matcher needs the descriptors to be of type CV_32F
             descriptors[0].convertTo(descriptors[0], CV_32F);
             descriptors[1].convertTo(descriptors[1], CV_32F);
@@ -197,7 +206,7 @@ int main( int argc, char** argv )  {
 
             n_matches = descriptors[0].rows;
             // Quick calculation of max and min distances between keypoints
-            good_matches = getGoodMatches(n_matches, matches);
+            good_matches = getGoodMatches(matches);
             n_good = good_matches.size();
             cout << "Pair  "<< n_img+1 <<" -- -- -- -- -- -- -- -- -- --"  << endl;
             cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
@@ -238,13 +247,18 @@ int main( int argc, char** argv )  {
                 colorChannelStretch(img[0], img[0], 1, 99);
                 colorChannelStretch(img[1], img[1], 1, 99);
             }
-            // Conver images to gray
+            // Convert images to gray
             cvtColor(img[0],img[0],COLOR_BGR2GRAY);
             cvtColor(img[1],img[1],COLOR_BGR2GRAY);
 
             // Detect the keypoints using desired Detector and compute the descriptors
-            detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-            detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
+            // detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
+            // detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
+            gridDetector(img, detector, keypoints, descriptors);
+            if(!keypoints[0].size() || !keypoints[1].size()){
+                cout << "No Key points Found" <<  endl;
+                break;
+            }
             // Flann matcher needs the descriptors to be of type CV_32F
             descriptors[0].convertTo(descriptors[0], CV_32F);
             descriptors[1].convertTo(descriptors[1], CV_32F);
@@ -254,7 +268,7 @@ int main( int argc, char** argv )  {
 
             n_matches = descriptors[0].rows;
             // Quick calculation of max and min distances between keypoints
-            good_matches = getGoodMatches(n_matches, matches);
+            good_matches = getGoodMatches(matches);
             n_good = good_matches.size();
             cout << "Pair  "<< ++i <<" -- -- -- -- -- -- -- -- -- --"  << endl;
             cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
