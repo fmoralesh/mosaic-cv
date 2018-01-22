@@ -199,12 +199,11 @@ int main( int argc, char** argv )  {
             // Quick calculation of max and min distances between keypoints
             good_matches = getGoodMatches(n_matches, matches);
             n_good = good_matches.size();
-            cout << "Pair  "<< n_img+1 <<" -- -- -- -- -- -- -- -- -- --"  << endl;
+            cout << "Pair  "<< n_img++; <<" -- -- -- -- -- -- -- -- -- --"  << endl;
             cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
             cout << "-- Good Matches      ["<< n_good <<"]"  << endl;
             cout << "-- Accuracy  ["<< n_good*100/n_matches <<" %]"  << endl;
 
-            n_img++;
             tot_matches+=n_matches;
             tot_good+=n_good;
             img[0].release();
@@ -257,12 +256,15 @@ int main( int argc, char** argv )  {
             // Quick calculation of max and min distances between keypoints
             good_matches = getGoodMatches(n_matches, matches);
             n_good = good_matches.size();
-            cout << "Pair  "<< ++i <<" -- -- -- -- -- -- -- -- -- --"  << endl;
+            
+            tot_matches+=n_matches;
+            tot_good+=n_good;
+            cout << "Pair  "<< n_img++ <<" -- -- -- -- -- -- -- -- -- --"  << endl;
             cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
             cout << "-- Good Matches      ["<< n_good <<"]"  << endl;
             cout << "-- Accuracy  ["<< n_good*100/n_matches <<" %]"  << endl;
         }
-        cout << "\nTotal pairs "<< i <<" -- -- -- -- -- -- -- -- -- --"  << endl;
+        cout << "\nTotal pairs "<< n_img <<" -- -- -- -- -- -- -- -- -- --"  << endl;
         cout << "-- Total Possible matches  ["<< tot_matches <<"]"  << endl;
         cout << "-- Total Good Matches      ["<< tot_good <<"]"  << endl;
         cout << "-- Total Accuracy  ["<< (int)(tot_good*100/tot_matches) <<" %]"  << endl;
