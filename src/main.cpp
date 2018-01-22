@@ -88,9 +88,9 @@ int main( int argc, char** argv )  {
         detector = KAZE::create();
     }
     // Create the desired feature matcher based on imput commands
-    if(op_brutef){
+    if(op_flann){
         matcher = FlannBasedMatcher::create();
-    }else if(op_flann){
+    }else if(op_brutef){
         matcher = BFMatcher::create();
     }
 
@@ -232,6 +232,17 @@ int main( int argc, char** argv )  {
             img[0].release();
             img[1].release();
             good_matches.erase(good_matches.begin(), good_matches.end());
+            if(op_out){
+                Mat img_matches;
+                // Draw only "good" matches
+                drawMatches( img[0], keypoints[0], img[1], keypoints[1],
+                            good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
+                            vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+                // Show matches
+                namedWindow("Good Matches", WINDOW_NORMAL);
+                imshow( "Good Matches", img_matches );
+                waitKey(0);
+            }
         }
         cout << "\nTotal "<< n_img++ <<" -- -- -- -- -- -- -- -- -- --"  << endl;
         cout << "-- Total Possible matches  ["<< tot_matches <<"]"  << endl;
@@ -265,9 +276,9 @@ int main( int argc, char** argv )  {
             cvtColor(img[1],img[1],COLOR_BGR2GRAY);
 
             // Detect the keypoints using desired Detector and compute the descriptors
-            // detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-            // detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
-            gridDetector(img, detector, keypoints, descriptors);
+            detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
+            detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
+            // gridDetector(img, detector, keypoints, descriptors);
             if(!keypoints[0].size() || !keypoints[1].size()){
                 cout << "No Key points Found" <<  endl;
                 break;
@@ -283,10 +294,24 @@ int main( int argc, char** argv )  {
             // Quick calculation of max and min distances between keypoints
             good_matches = getGoodMatches(keypoints[0].size()-1, matches);
             n_good = good_matches.size();
-            cout << "Pair  "<< ++i <<" -- -- -- -- -- -- -- -- -- --"  << endl;
+            cout << "Pair  "<< n_img++ <<" -- -- -- -- -- -- -- -- -- --"  << endl;
             cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
             cout << "-- Good Matches      ["<< n_good <<"]"  << endl;
             cout << "-- Accuracy  ["<< n_good*100/n_matches <<" %]"  << endl;
+            tot_matches+=n_matches;
+            tot_good+=n_good;
+            
+            if(op_out){
+                Mat img_matches;
+                // Draw only "good" matches
+                drawMatches( img[0], keypoints[0], img[1], keypoints[1],
+                            good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
+                            vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+                // Show matches
+                namedWindow("Good Matches", WINDOW_NORMAL);
+                imshow( "Good Matches", img_matches );
+                waitKey(0);
+            }
         }
         cout << "\nTotal pairs "<< i <<" -- -- -- -- -- -- -- -- -- --"  << endl;
         cout << "-- Total Possible matches  ["<< tot_matches <<"]"  << endl;

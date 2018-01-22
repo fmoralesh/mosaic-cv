@@ -24,10 +24,10 @@
  * @function getGoodMatches(int n_matches, std::vector<cv::DMatch> matches)
  * @brief Discard the matchs outliers
  * @param n_matches Number of matches
- * @param matches Vector container all the Opencv Matches
+ * @param matches Vector of Vectors, container all the Opencv Matches
  * @return vector<cv::DMatch> Vector container good Opencv Matches
  */
-std::vector<cv::DMatch> getGoodMatches(const int n_kp, const std::vector<std::vector<cv::DMatch> > matches);
+std::vector<cv::DMatch> getGoodMatches(const int n_matches, const std::vector<std::vector<cv::DMatch> > matches);
 
 /**
  * @function read_filenames(std::string dir_ent)
