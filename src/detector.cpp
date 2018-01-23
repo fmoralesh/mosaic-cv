@@ -11,7 +11,7 @@ std::vector<DMatch> getGoodMatches(int n_matches, std::vector<std::vector<cv::DM
     for (int i = 0; i < std::min(n_matches, (int)matches.size()); i++) {
         if ((matches[i][0].distance < 0.5 * (matches[i][1].distance)) &&
             ((int) matches[i].size() <= 2 && (int) matches[i].size() > 0)) {
-            // take the first result only if its distance is smaller than 0.6*second_best_dist
+            // take the first result only if its distance is smaller than 0.5*second_best_dist
             // that means this descriptor is ignored if the second distance is bigger or of similar
             good_matches.push_back(matches[i][0]);
         }

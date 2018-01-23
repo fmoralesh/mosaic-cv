@@ -12,8 +12,8 @@
 #include "preprocessing.h"
 
 /// Dimensions to resize images
-#define TARGET_WIDTH	1020//640     
-#define TARGET_HEIGHT	760//480 
+#define TARGET_WIDTH	1020   
+#define TARGET_HEIGHT	760 
 
 /// User namespaces
 using namespace std;
@@ -164,9 +164,9 @@ int main( int argc, char** argv ) {
         cvtColor(img[1],img[1],COLOR_BGR2GRAY);
 
         // Detect the keypoints using desired Detector and compute the descriptors
-        detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-        detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
-        // gridDetector(img, detector, keypoints, descriptors);
+        // detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
+        // detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
+        gridDetector(img, detector, keypoints, descriptors);
 
         if(!keypoints[0].size() || !keypoints[1].size()){
             cout << "No Key points Found" <<  endl;
@@ -180,7 +180,7 @@ int main( int argc, char** argv ) {
         matcher->knnMatch( descriptors[0], descriptors[1], matches, 2);
         n_matches = descriptors[0].rows;
         // Discard the bad matches (outliers)
-        good_matches = getGoodMatches(keypoints[0].size()-1, matches);
+        good_matches = getGoodMatches(n_matches - 1, matches);
         //good_matches = matches;
         n_good = good_matches.size();
 
@@ -190,7 +190,6 @@ int main( int argc, char** argv ) {
         cout << "Pair  "<< n_img++ <<" -- -- -- -- -- -- -- -- -- --"  << endl;
         cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
         cout << "-- Good Matches      ["<< n_good <<"]"  << endl;
-        cout << "-- Accuracy  ["<< n_good*100/n_matches <<" %]"  << endl;
         // for output command ( -o )
         if(op_out){
             Mat img_matches;
@@ -209,7 +208,6 @@ int main( int argc, char** argv ) {
     cout << "\nTotal "<< n_img <<" -- -- -- -- -- -- -- -- -- --"  << endl;
     cout << "-- Total Possible matches  ["<< tot_matches <<"]"  << endl;
     cout << "-- Total Good Matches      ["<< tot_good <<"]"  << endl;
-    cout << "-- Total Accuracy  ["<< (int)(tot_good*100/tot_matches) <<" %]"  << endl;
     t = 1000 * ((double) getTickCount() - t) / getTickFrequency();        
     cout << "   Execution time: " << t << " ms" <<endl;
 
