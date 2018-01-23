@@ -78,7 +78,7 @@ int main( int argc, char** argv ) {
     Ptr<DescriptorMatcher> matcher;
 
     // Create the desired feature extractor based on imput commands
-    if(1){//op_sift){
+    if(op_sift){
         detector = SIFT::create();
     }else if(op_surf){
         detector = SURF::create();
@@ -133,8 +133,8 @@ int main( int argc, char** argv ) {
         cout << "Video opened \nFrames per second: "<< fps << "\nFrames in video:   "<<fcnt<< endl;
     }
     string dir_ent;
-    if(1){//op_dir){
-        dir_ent = "frames";//args::get(op_dir);
+    if(op_dir){
+        dir_ent = args::get(op_dir);
         file_names = read_filenames(dir_ent);
         n_iter = file_names.size()-1;
         step_iter = 2;
@@ -147,7 +147,7 @@ int main( int argc, char** argv ) {
             vid.set(CAP_PROP_POS_FRAMES,i+=step_iter);
             vid >> img[1];
         }
-        if(1){//op_dir){
+        if(op_dir){
             img[0] = imread(dir_ent+"/"+file_names[i],1);
             img[1] = imread(dir_ent+"/"+file_names[i+1],1);
         }
