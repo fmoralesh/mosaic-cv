@@ -19,30 +19,6 @@ std::vector<DMatch> getGoodMatches(int n_matches, std::vector<std::vector<cv::DM
     return good_matches;
 }
 
-
-// See description in header file
-std::vector<string> read_filenames(const std::string dir_ent){
-    vector<string> file_names;
-    DIR *dir;
-    struct dirent *ent;
-
-    if ((dir = opendir(dir_ent.c_str())) != NULL) {
-        while ((ent = readdir (dir)) != NULL) {
-            file_names.push_back(string(ent->d_name));
-        }
-        closedir (dir);
-    } else {
-    // If the directory could not be opened
-    cout << "Directory could not be opened" <<endl;
-    }
-    // Sorting the vector of strings so it is alphabetically ordered
-    sort(file_names.begin(), file_names.end());
-    file_names.erase(file_names.begin(), file_names.begin()+2);
-
-    return file_names;
-}
-
-
 // See description in header file
 void gridDetector(const Mat src[2], Feature2D* detector, vector<KeyPoint> keypoints[2], Mat descriptors[2]){
     int stepx=102, stepy=76;
@@ -72,4 +48,26 @@ void gridDetector(const Mat src[2], Feature2D* detector, vector<KeyPoint> keypoi
     }
     // Compute the keypoints and descriptors of the second image
     detector->detectAndCompute( src[1], Mat(), keypoints[1], descriptors[1]);
+}
+
+// See description in header file
+std::vector<string> read_filenames(const std::string dir_ent){
+    vector<string> file_names;
+    DIR *dir;
+    struct dirent *ent;
+
+    if ((dir = opendir(dir_ent.c_str())) != NULL) {
+        while ((ent = readdir (dir)) != NULL) {
+            file_names.push_back(string(ent->d_name));
+        }
+        closedir (dir);
+    } else {
+    // If the directory could not be opened
+    cout << "Directory could not be opened" <<endl;
+    }
+    // Sorting the vector of strings so it is alphabetically ordered
+    sort(file_names.begin(), file_names.end());
+    file_names.erase(file_names.begin(), file_names.begin()+2);
+
+    return file_names;
 }

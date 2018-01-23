@@ -37,13 +37,13 @@ using namespace cv::xfeatures2d;
  * - Brute force
  * - Flann
  */
-int main( int argc, char** argv )  {
+int main( int argc, char** argv ) {
 
     double tot_matches=0, tot_good =0;
     double t;
     int n_matches=0, n_good=0;
     int i=0, n_img=0;
-    int nIter = 0;
+    int n_iter = 0, step_iter = 0;
 
     parser.Prog(argv[0]);
 
@@ -78,7 +78,7 @@ int main( int argc, char** argv )  {
     Ptr<DescriptorMatcher> matcher;
 
     // Create the desired feature extractor based on imput commands
-    if(op_sift){
+    if(1){//op_sift){
         detector = SIFT::create();
     }else if(op_surf){
         detector = SURF::create();
@@ -88,14 +88,17 @@ int main( int argc, char** argv )  {
         detector = KAZE::create();
     }
     // Create the desired feature matcher based on imput commands
+    //op_flann? matcher = FlannBasedMatcher::create() :  matcher = BFMatcher::create();
     if(op_flann){
         matcher = FlannBasedMatcher::create();
-    }else if(op_brutef){
+    }else{
         matcher = BFMatcher::create();
     }
 
     // Two images as imput
     if (op_img){
+        n_iter = 1;
+        step_iter = 1;
         t = (double) getTickCount();
         // Check for two image flags and patchs (-i imageName)
         for(const auto img_name: args::get(op_img)){
@@ -113,10 +116,44 @@ int main( int argc, char** argv )  {
             std::cerr << "Use -h, --help command to see usage" << std::endl;
             return -1;
         }
+    }
+    VideoCapture vid;
+    if(op_vid){
+        vid.open(args::get(op_vid));
+        if(!vid.isOpened()){
+            // Error openning the video
+            cout << "Couldn't open Video " << endl;
+            return -1;
+        }
+        // Get the video paramenters. frames per second and frames number
+        double fps = vid.get(CAP_PROP_FPS);
+        double fcnt = vid.get(CAP_PROP_FRAME_COUNT);
+        n_iter = fcnt;
+        step_iter = fps;
+        cout << "Video opened \nFrames per second: "<< fps << "\nFrames in video:   "<<fcnt<< endl;
+    }
+    string dir_ent;
+    if(1){//op_dir){
+        dir_ent = "frames";//args::get(op_dir);
+        file_names = read_filenames(dir_ent);
+        n_iter = file_names.size()-1;
+        step_iter = 2;
+    }
+    t = (double) getTickCount();
+    for(i=0; i<n_iter; i+=step_iter){
+        if(op_vid){
+            vid.set(CAP_PROP_POS_FRAMES,i);
+            vid >> img[0];
+            vid.set(CAP_PROP_POS_FRAMES,i+=step_iter);
+            vid >> img[1];
+        }
+        if(1){//op_dir){
+            img[0] = imread(dir_ent+"/"+file_names[i],1);
+            img[1] = imread(dir_ent+"/"+file_names[i+1],1);
+        }
         // Resize the images to 640 x 480
         resize(img[0], img[0], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
         resize(img[1], img[1], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
-        
         // Apply pre-processing algorithm if selected
         if(op_pre){
             colorChannelStretch(img[0], img[0], 1, 99);
@@ -127,9 +164,9 @@ int main( int argc, char** argv )  {
         cvtColor(img[1],img[1],COLOR_BGR2GRAY);
 
         // Detect the keypoints using desired Detector and compute the descriptors
-        // detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-        // detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
-        gridDetector(img, detector, keypoints, descriptors);
+        detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
+        detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
+        // gridDetector(img, detector, keypoints, descriptors);
 
         if(!keypoints[0].size() || !keypoints[1].size()){
             cout << "No Key points Found" <<  endl;
@@ -147,12 +184,13 @@ int main( int argc, char** argv )  {
         //good_matches = matches;
         n_good = good_matches.size();
 
-        cout << endl;
+        tot_matches+=n_matches;
+        tot_good+=n_good;
+
+        cout << "Pair  "<< n_img++ <<" -- -- -- -- -- -- -- -- -- --"  << endl;
         cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
         cout << "-- Good Matches      ["<< n_good <<"]"  << endl;
         cout << "-- Accuracy  ["<< n_good*100/n_matches <<" %]"  << endl;
-        t = 1000 * ((double) getTickCount() - t) / getTickFrequency();        
-        cout << "   Execution time: " << t << " ms" <<endl;
         // for output command ( -o )
         if(op_out){
             Mat img_matches;
@@ -165,163 +203,17 @@ int main( int argc, char** argv )  {
             imshow( "Good Matches", img_matches );
             waitKey(0);
         }
-        return 1;
+        img[0].release();
+        img[0].release();
     }
-    // video file as imput
-    if(op_vid){
-        VideoCapture vid;
-        vid.open(args::get(op_vid));
-        
-        if(!vid.isOpened()){
-            // Error openning the video
-            cout << "Couldn't open Video " << endl;
-            return -1;
-        }
-        // Get the video paramenters. frames per second and frames number
-        double fps = vid.get(CAP_PROP_FPS);
-        double fcnt = vid.get(CAP_PROP_FRAME_COUNT);
-        cout << "Video opened \nFrames per second: "<< fps << "\nFrames in video:   "<<fcnt<< endl;
+    cout << "\nTotal "<< n_img <<" -- -- -- -- -- -- -- -- -- --"  << endl;
+    cout << "-- Total Possible matches  ["<< tot_matches <<"]"  << endl;
+    cout << "-- Total Good Matches      ["<< tot_good <<"]"  << endl;
+    cout << "-- Total Accuracy  ["<< (int)(tot_good*100/tot_matches) <<" %]"  << endl;
+    t = 1000 * ((double) getTickCount() - t) / getTickFrequency();        
+    cout << "   Execution time: " << t << " ms" <<endl;
 
-        t = (double) getTickCount();
-        for(i=0; i<fcnt; i+=fps){
-            vid.set(CAP_PROP_POS_FRAMES,i);
-            vid >> img[0];
-            vid.set(CAP_PROP_POS_FRAMES,i+=fps);
-            vid >> img[1];
+    if(op_vid) vid.release();
 
-            // Resize the images to 640 x 480 = TARGET_WIDTH x TARGET_HEIGHT
-            resize(img[0], img[0], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
-            resize(img[1], img[1], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
-            
-            // Apply pre-processing algorithm if selected
-            if(op_pre){
-                colorChannelStretch(img[0], img[0], 1, 99);
-                colorChannelStretch(img[1], img[1], 1, 99);
-            }
-            // Conver images to gray
-            cvtColor(img[0],img[0],COLOR_BGR2GRAY);
-            cvtColor(img[1],img[1],COLOR_BGR2GRAY);
-            
-            // Detect the keypoints using desired Detector and compute the descriptors
-            // detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-            // detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
-            gridDetector(img, detector, keypoints, descriptors);
-            if(!keypoints[0].size() || !keypoints[1].size()){
-                cout << "No Key points Found" <<  endl;
-                break;
-            }   
-            // Flann matcher needs the descriptors to be of type CV_32F
-            descriptors[0].convertTo(descriptors[0], CV_32F);
-            descriptors[1].convertTo(descriptors[1], CV_32F);
-
-            // Match the keypoints for input images
-            matcher->knnMatch( descriptors[0], descriptors[1], matches, 2);
-
-            n_matches = descriptors[0].rows;
-            // Quick calculation of max and min distances between keypoints
-            good_matches = getGoodMatches(keypoints[0].size()-1, matches);
-            n_good = good_matches.size();
-            cout << "Pair  "<< n_img+1 <<" -- -- -- -- -- -- -- -- -- --"  << endl;
-            cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
-            cout << "-- Good Matches      ["<< n_good <<"]"  << endl;
-            cout << "-- Accuracy  ["<< n_good*100/n_matches <<" %]"  << endl;
-
-            n_img++;
-            tot_matches+=n_matches;
-            tot_good+=n_good;
-            img[0].release();
-            img[1].release();
-            good_matches.erase(good_matches.begin(), good_matches.end());
-            if(op_out){
-                Mat img_matches;
-                // Draw only "good" matches
-                drawMatches( img[0], keypoints[0], img[1], keypoints[1],
-                            good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
-                            vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-                // Show matches
-                namedWindow("Good Matches", WINDOW_NORMAL);
-                imshow( "Good Matches", img_matches );
-                waitKey(0);
-            }
-        }
-        cout << "\nTotal "<< n_img++ <<" -- -- -- -- -- -- -- -- -- --"  << endl;
-        cout << "-- Total Possible matches  ["<< tot_matches <<"]"  << endl;
-        cout << "-- Total Good Matches      ["<< tot_good <<"]"  << endl;
-        cout << "-- Total Accuracy  ["<< (int)(tot_good*100/tot_matches) <<" %]"  << endl;
-        //high_resolution_clock::time_point t2 = high_resolution_clock::now();
-        //auto duration = duration_cast<microseconds>( t2 - t1 ).count()/1000;
-        t = 1000 * ((double) getTickCount() - t) / getTickFrequency();        
-        cout << "   Execution time: " << t << " ms" <<endl;
-        vid.release();
-    }
-    if(op_dir){
-        string dir_ent = args::get(op_dir);
-        vector<string> file_names = read_filenames(dir_ent);
-        cout << file_names[0] << endl;
-        for(int i=0; i<file_names.size()-1; i+=2){
-            img[0] = imread(dir_ent+"/"+file_names.at(i),1);
-            img[1] = imread(dir_ent+"/"+file_names.at(i+1),1);
-        
-            // Resize the images to 640 x 480
-            resize(img[0], img[0], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
-            resize(img[1], img[1], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
-            
-            // Apply pre-processing algorithm if selected
-            if(op_pre){
-                colorChannelStretch(img[0], img[0], 1, 99);
-                colorChannelStretch(img[1], img[1], 1, 99);
-            }
-            // Convert images to gray
-            cvtColor(img[0],img[0],COLOR_BGR2GRAY);
-            cvtColor(img[1],img[1],COLOR_BGR2GRAY);
-
-            // Detect the keypoints using desired Detector and compute the descriptors
-            detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-            detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
-            // gridDetector(img, detector, keypoints, descriptors);
-            if(!keypoints[0].size() || !keypoints[1].size()){
-                cout << "No Key points Found" <<  endl;
-                break;
-            }
-            // Flann matcher needs the descriptors to be of type CV_32F
-            descriptors[0].convertTo(descriptors[0], CV_32F);
-            descriptors[1].convertTo(descriptors[1], CV_32F);
-
-            // Match the keypoints for input images
-            matcher->knnMatch( descriptors[0], descriptors[1], matches, 2);
-
-            n_matches = descriptors[0].rows;
-            // Quick calculation of max and min distances between keypoints
-            good_matches = getGoodMatches(keypoints[0].size()-1, matches);
-            n_good = good_matches.size();
-            cout << "Pair  "<< n_img++ <<" -- -- -- -- -- -- -- -- -- --"  << endl;
-            cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
-            cout << "-- Good Matches      ["<< n_good <<"]"  << endl;
-            cout << "-- Accuracy  ["<< n_good*100/n_matches <<" %]"  << endl;
-            tot_matches+=n_matches;
-            tot_good+=n_good;
-            
-            if(op_out){
-                Mat img_matches;
-                // Draw only "good" matches
-                drawMatches( img[0], keypoints[0], img[1], keypoints[1],
-                            good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
-                            vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-                // Show matches
-                namedWindow("Good Matches", WINDOW_NORMAL);
-                imshow( "Good Matches", img_matches );
-                waitKey(0);
-            }
-        }
-        cout << "\nTotal pairs "<< i <<" -- -- -- -- -- -- -- -- -- --"  << endl;
-        cout << "-- Total Possible matches  ["<< tot_matches <<"]"  << endl;
-        cout << "-- Total Good Matches      ["<< tot_good <<"]"  << endl;
-        cout << "-- Total Accuracy  ["<< (int)(tot_good*100/tot_matches) <<" %]"  << endl;
-        t = 1000 * ((double) getTickCount() - t) / getTickFrequency();        
-        cout << "   Execution time: " << t << " ms" <<endl;
-    }
     return 0;
 }
-
-
-

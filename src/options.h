@@ -21,7 +21,7 @@ args::Flag op_surf(op_feature, "SURF", "Use SURF Extractor and Descriptor", {"su
 args::Flag op_orb(op_feature, "ORB", "Use ORB Extractor and Descriptor", {"orb"});
 args::Flag op_kaze(op_feature, "KAZE", "Use KAZE Extractor and Descriptor", {"kaze"});
 
-args::Group op_matcher(sub_p, "Select the Feature Matcher:", args::Group::Validators::AtLeastOne);
+args::Group op_matcher(sub_p, "Select the Feature Matcher:", args::Group::Validators::AtMostOne);
 args::Flag op_brutef(op_matcher, "Brute Force", "Use Brute Force Matcher", {'b'});
 args::Flag op_flann(op_matcher, "Flann", "Use Flann Matcher", {'f'});
 
