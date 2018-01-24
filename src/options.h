@@ -15,11 +15,6 @@ args::ArgumentParser parser("Feature Detectors comparison", "Author: Victor Garc
 args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
 
 args::Group sub_p(parser, "", args::Group::Validators::AllOrNone);
-args::Group op_feature(sub_p, "Select the Feature Detector :", args::Group::Validators::AtMostOne);
-args::Flag op_sift(op_feature, "SIFT", "Use SIFT Detector ", {"sift"});
-args::Flag op_surf(op_feature, "SURF", "Use SURF Detector ", {"surf"});
-args::Flag op_kaze(op_feature,  "KAZE", "Use KAZE Detector ", {"kaze"});
-args::Flag op_akaze(op_feature, "AKAZE", "Use KAZE Detector ", {"akaze"});
 
 args::Group op_matcher(sub_p, "Select the Feature Matcher:", args::Group::Validators::AtMostOne);
 args::Flag op_brutef(op_matcher, "Brute Force", "Use Brute Force Matcher", {'b'});

@@ -20,13 +20,13 @@ std::vector<DMatch> getGoodMatches(int n_matches, std::vector<std::vector<cv::DM
 }
 
 // See description in header file
-void gridDetector(const Mat src[2], cv::Ptr<Feature2D> detector, vector<KeyPoint> keypoints[2], Mat descriptors[2]){
+void gridDetector(const Mat src[2], cv::Ptr<cv::AKAZE> detector, vector<KeyPoint> keypoints[2], Mat descriptors[2]){
     int stepx=64, stepy=48;
     Rect roi(0, 0, stepx, stepy);
     vector<KeyPoint> aux_keypoint;
-    Mat aux_descriptor(0, detector->descriptorSize(), detector->descriptorType());
+    Mat aux_descriptor(0, detector->getDescriptorSize(), detector->getDescriptorType());
     // Define the number of columns based on descriptor type
-    descriptors[0].create(0, detector->descriptorSize(), detector->descriptorType());
+    descriptors[0].create(0, detector->getDescriptorSize(), detector->getDescriptorType());
 
     // Detect keypoints in first image in sections of size stepx * stepy
     // number of iterations fixed to 10x10 -> 10*64 x 10*48 = TARGET_WIDHT x TARGET_HEIGHT

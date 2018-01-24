@@ -74,26 +74,8 @@ int main( int argc, char** argv ) {
     }
     
     int minHessian = 400;
-    Ptr<Feature2D> detector;
-    Ptr<DescriptorMatcher> matcher;
-
-    // Create the desired feature extractor based on imput commands
-    if(op_sift){
-        detector = SIFT::create();
-    }else if(op_surf){
-        detector = SURF::create();
-    }else if(op_kaze){
-        detector = KAZE::create();
-    }else if(op_akaze){
-        detector = AKAZE::create();
-    }
-    // Create the desired feature matcher based on imput commands
-    //op_flann? matcher = FlannBasedMatcher::create() :  matcher = BFMatcher::create();
-    if(op_flann){
-        matcher = FlannBasedMatcher::create();
-    }else{
-        matcher = BFMatcher::create();
-    }
+    Ptr<AKAZE> detector = AKAZE::create();
+    Ptr<DescriptorMatcher> matcher = BFMatcher::create();
 
     // Two images as imput
     if (op_img){
