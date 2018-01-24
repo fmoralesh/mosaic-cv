@@ -20,8 +20,8 @@ std::vector<DMatch> getGoodMatches(int n_matches, std::vector<std::vector<cv::DM
 }
 
 // See description in header file
-void gridDetector(const Mat src[2], Feature2D* detector, vector<KeyPoint> keypoints[2], Mat descriptors[2]){
-    int stepx=102, stepy=76;
+void gridDetector(const Mat src[2], cv::Ptr<Feature2D> detector, vector<KeyPoint> keypoints[2], Mat descriptors[2]){
+    int stepx=64, stepy=48;
     Rect roi(0, 0, stepx, stepy);
     vector<KeyPoint> aux_keypoint;
     Mat aux_descriptor(0, detector->descriptorSize(), detector->descriptorType());

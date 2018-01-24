@@ -12,8 +12,8 @@
 #include "preprocessing.h"
 
 /// Dimensions to resize images
-#define TARGET_WIDTH	1020   
-#define TARGET_HEIGHT	760 
+#define TARGET_WIDTH	640   
+#define TARGET_HEIGHT	480 
 
 /// User namespaces
 using namespace std;
@@ -82,10 +82,10 @@ int main( int argc, char** argv ) {
         detector = SIFT::create();
     }else if(op_surf){
         detector = SURF::create();
-    }else if(op_orb){
-        detector = ORB::create();
     }else if(op_kaze){
         detector = KAZE::create();
+    }else if(op_akaze){
+        detector = AKAZE::create();
     }
     // Create the desired feature matcher based on imput commands
     //op_flann? matcher = FlannBasedMatcher::create() :  matcher = BFMatcher::create();
