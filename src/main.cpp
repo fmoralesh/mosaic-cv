@@ -75,7 +75,12 @@ int main( int argc, char** argv ) {
     
     int minHessian = 400;
     Ptr<KAZE> detector = KAZE::create();
-    Ptr<DescriptorMatcher> matcher = BFMatcher::create();
+    Ptr<DescriptorMatcher> matcher;
+    if(op_flann){
+        matcher = FlannBasedMatcher::create();
+    }else{
+        matcher = BFMatcher::create();
+    }
 
     // Two images as imput
     if (op_img){
