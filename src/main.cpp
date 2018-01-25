@@ -74,7 +74,7 @@ int main( int argc, char** argv ) {
     }
     
     int minHessian = 400;
-    Ptr<AKAZE> detector = AKAZE::create();
+    Ptr<KAZE> detector = KAZE::create();
     Ptr<DescriptorMatcher> matcher = BFMatcher::create();
 
     // Two images as imput
@@ -130,8 +130,8 @@ int main( int argc, char** argv ) {
             vid >> img[1];
         }
         if(op_dir){
-            img[0] = imread(dir_ent+"/"+file_names[i],1);
-            img[1] = imread(dir_ent+"/"+file_names[i+1],1);
+            img[0] = imread(dir_ent+"/"+file_names[i],IMREAD_COLOR);
+            img[1] = imread(dir_ent+"/"+file_names[i+1],IMREAD_COLOR);
         }
         // Resize the images to 640 x 480
         resize(img[0], img[0], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
@@ -146,19 +146,19 @@ int main( int argc, char** argv ) {
         cvtColor(img[1],img[1],COLOR_BGR2GRAY);
 
         // Detect the keypoints using desired Detector and compute the descriptors
-        // detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-        // detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
-        gridDetector(img, detector, keypoints, descriptors);
+        keypoints[0].clear();
+        keypoints[1].clear();
+        detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
+        detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
+        // gridDetector(img, detector, keypoints, descriptors);
 
         if(!keypoints[0].size() || !keypoints[1].size()){
             cout << "No Key points Found" <<  endl;
             return -1;
         }
-        // Flann matcher needs the descriptors to be of type CV_32F
-        descriptors[0].convertTo(descriptors[0], CV_32F);
-        descriptors[1].convertTo(descriptors[1], CV_32F);
 
         // Match the keypoints for input images
+        matches.clear();
         matcher->knnMatch( descriptors[0], descriptors[1], matches, 2);
         n_matches = descriptors[0].rows;
         // Discard the bad matches (outliers)
@@ -186,6 +186,8 @@ int main( int argc, char** argv ) {
         }
         img[0].release();
         img[0].release();
+        descriptors[0].release();
+        descriptors[1].release();
     }
     cout << "\nTotal "<< n_img <<" -- -- -- -- -- -- -- -- -- --"  << endl;
     cout << "-- Total Possible matches  ["<< tot_matches <<"]"  << endl;

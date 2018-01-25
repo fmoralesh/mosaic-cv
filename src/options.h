@@ -17,8 +17,6 @@ args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
 args::Group sub_p(parser, "", args::Group::Validators::AllOrNone);
 
 args::Group op_matcher(sub_p, "Select the Feature Matcher:", args::Group::Validators::AtMostOne);
-args::Flag op_brutef(op_matcher, "Brute Force", "Use Brute Force Matcher", {'b'});
-args::Flag op_flann(op_matcher, "Flann", "Use Flann Matcher", {'f'});
 
 args::Group op_data(sub_p, "Select imput data:", args::Group::Validators::AtMostOne);
 args::ValueFlagList<std::string> op_img(op_data, "ImageName", "Image imput name. Mus specify two file names (one per flag)",{'i'});
