@@ -104,21 +104,6 @@ int main( int argc, char** argv ) {
             return -1;
         }
     }
-    VideoCapture vid;
-    if(op_vid){
-        vid.open(args::get(op_vid));
-        if(!vid.isOpened()){
-            // Error openning the video
-            cout << "Couldn't open Video " << endl;
-            return -1;
-        }
-        // Get the video paramenters. frames per second and frames number
-        double fps = vid.get(CAP_PROP_FPS);
-        double fcnt = vid.get(CAP_PROP_FRAME_COUNT);
-        n_iter = fcnt;
-        step_iter = fps;
-        cout << "Video opened \nFrames per second: "<< fps << "\nFrames in video:   "<<fcnt<< endl;
-    }
     string dir_ent;
     if(op_dir){
         dir_ent = args::get(op_dir);
@@ -128,12 +113,6 @@ int main( int argc, char** argv ) {
     }
     t = (double) getTickCount();
     for(i=0; i<n_iter; i+=step_iter){
-        if(op_vid){
-            vid.set(CAP_PROP_POS_FRAMES,i);
-            vid >> img[0];
-            vid.set(CAP_PROP_POS_FRAMES,i+=step_iter);
-            vid >> img[1];
-        }
         if(op_dir){
             img[0] = imread(dir_ent+"/"+file_names[i],IMREAD_COLOR);
             img[1] = imread(dir_ent+"/"+file_names[i+1],IMREAD_COLOR);
@@ -155,7 +134,6 @@ int main( int argc, char** argv ) {
         keypoints[1].clear();
         detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
         detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
-        // gridDetector(img, detector, keypoints, descriptors);
 
         if(!keypoints[0].size() || !keypoints[1].size()){
             cout << "No Key points Found" <<  endl;
@@ -168,9 +146,9 @@ int main( int argc, char** argv ) {
         n_matches = descriptors[0].rows;
         // Discard the bad matches (outliers)
         good_matches = getGoodMatches(n_matches - 1, matches);
-        //good_matches = matches;
-        n_good = good_matches.size();
+        gridDetector(keypoints[0], good_matches);
 
+        n_good = good_matches.size();
         tot_matches+=n_matches;
         tot_good+=n_good;
 
@@ -199,8 +177,6 @@ int main( int argc, char** argv ) {
     cout << "-- Total Good Matches      ["<< tot_good <<"]"  << endl;
     t = 1000 * ((double) getTickCount() - t) / getTickFrequency();        
     cout << "   Execution time: " << t << " ms" <<endl;
-
-    if(op_vid) vid.release();
 
     return 0;
 }
