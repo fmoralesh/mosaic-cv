@@ -10,6 +10,7 @@
 #include "options.h"
 #include "detector.h"
 #include "preprocessing.h"
+#include "opencv2/stitching.hpp"
 
 /// Dimensions to resize images
 #define TARGET_WIDTH	640   
@@ -19,6 +20,9 @@
 using namespace std;
 using namespace cv;
 using namespace cv::xfeatures2d;
+
+const std::string green("\033[1;32m");
+const std::string reset("\033[0m");
 
 /*
  * @function main
@@ -52,7 +56,7 @@ int main( int argc, char** argv ) {
     vector<DMatch>  good_matches;
     vector<KeyPoint> keypoints[2];
     Mat descriptors[2];
-    Mat img[2];
+    Mat img[2], img_ori[2];
 
     try{
         parser.ParseCLI(argc, argv);
@@ -85,7 +89,6 @@ int main( int argc, char** argv ) {
     // Two images as imput
     if (op_img){
         n_iter = 1;
-        step_iter = 1;
         t = (double) getTickCount();
         // Check for two image flags and patchs (-i imageName)
         for(const auto img_name: args::get(op_img)){
@@ -104,43 +107,24 @@ int main( int argc, char** argv ) {
             return -1;
         }
     }
-    VideoCapture vid;
-    if(op_vid){
-        vid.open(args::get(op_vid));
-        if(!vid.isOpened()){
-            // Error openning the video
-            cout << "Couldn't open Video " << endl;
-            return -1;
-        }
-        // Get the video paramenters. frames per second and frames number
-        double fps = vid.get(CAP_PROP_FPS);
-        double fcnt = vid.get(CAP_PROP_FRAME_COUNT);
-        n_iter = fcnt;
-        step_iter = fps;
-        cout << "Video opened \nFrames per second: "<< fps << "\nFrames in video:   "<<fcnt<< endl;
-    }
+
     string dir_ent;
     if(op_dir){
         dir_ent = args::get(op_dir);
         file_names = read_filenames(dir_ent);
         n_iter = file_names.size()-1;
-        step_iter = 2;
     }
     t = (double) getTickCount();
-    for(i=0; i<n_iter; i+=step_iter){
-        if(op_vid){
-            vid.set(CAP_PROP_POS_FRAMES,i);
-            vid >> img[0];
-            vid.set(CAP_PROP_POS_FRAMES,i+=step_iter);
-            vid >> img[1];
-        }
+    for(i=0; i<n_iter; i++){
         if(op_dir){
-            img[0] = imread(dir_ent+"/"+file_names[i],IMREAD_COLOR);
-            img[1] = imread(dir_ent+"/"+file_names[i+1],IMREAD_COLOR);
+            img[0] = imread(dir_ent+"/"+file_names[i++],IMREAD_COLOR);
+            img[1] = imread(dir_ent+"/"+file_names[i],IMREAD_COLOR);
         }
         // Resize the images to 640 x 480
         resize(img[0], img[0], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
         resize(img[1], img[1], Size(TARGET_WIDTH, TARGET_HEIGHT), 0, 0, CV_INTER_LINEAR);
+        img_ori[0] = img[0].clone();
+        img_ori[1] = img[1].clone();
         // Apply pre-processing algorithm if selected
         if(op_pre){
             colorChannelStretch(img[0], img[0], 1, 99);
@@ -153,9 +137,9 @@ int main( int argc, char** argv ) {
         // Detect the keypoints using desired Detector and compute the descriptors
         keypoints[0].clear();
         keypoints[1].clear();
-        detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-        detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
-        // gridDetector(img, detector, keypoints, descriptors);
+        // detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
+        // detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
+        gridDetector(img, detector, keypoints, descriptors);
 
         if(!keypoints[0].size() || !keypoints[1].size()){
             cout << "No Key points Found" <<  endl;
@@ -176,8 +160,37 @@ int main( int argc, char** argv ) {
 
         cout << "Pair  "<< n_img++ <<" -- -- -- -- -- -- -- -- -- --"  << endl;
         cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
-        cout << "-- Good Matches      ["<< n_good <<"]"  << endl;
+        cout << "-- Good Matches      ["<<green<< n_good <<reset<<"]"  << endl;
         // for output command ( -o )
+
+        vector<Point2f> img1, img2;
+        for (int i = 0; i < good_matches.size(); i ++) {
+            //-- Get the keypoints from the good matches
+            img1.push_back(keypoints[0][good_matches[i].queryIdx].pt);
+            img2.push_back(keypoints[1][good_matches[i].trainIdx].pt);
+        }
+
+        Mat H = findHomography(Mat(img1), Mat(img2), CV_RANSAC);
+
+        cv::Mat result;
+        warpPerspective(img_ori[0],result,H,cv::Size(img_ori[0].cols ,img_ori[1].rows + img_ori[0].rows));
+        cv::Mat half(result,cv::Rect(0,0,img_ori[1].cols,img_ori[1].rows));
+        img_ori[1].copyTo(half);
+        imshow("fsdf",result);
+        waitKey(0);
+        // cv::Mat result;
+        // warpPerspective(img[1], result, H, cv::Size(img[1].cols + img[0].cols, img[1].rows*2), INTER_CUBIC);
+
+        // Mat final(Size(img[0].cols * 2 + img[1].cols, img[1].rows * 2), CV_8UC3);
+
+        // Mat roi1(final, Rect(0, 0, img[0].cols, img[0].rows));
+        // Mat roi2(final, Rect(0, 0, result.cols, result.rows));
+
+        // result.copyTo(roi2);
+        // img[0].copyTo(roi1);
+
+        // imshow("Result", final);
+
         if(op_out){
             Mat img_matches;
             // Draw only "good" matches
@@ -196,11 +209,9 @@ int main( int argc, char** argv ) {
     }
     cout << "\nTotal "<< n_img <<" -- -- -- -- -- -- -- -- -- --"  << endl;
     cout << "-- Total Possible matches  ["<< tot_matches <<"]"  << endl;
-    cout << "-- Total Good Matches      ["<< tot_good <<"]"  << endl;
+    cout << "-- Total Good Matches      ["<<green<< tot_good <<reset<<"]"  << endl;
     t = 1000 * ((double) getTickCount() - t) / getTickFrequency();        
     cout << "   Execution time: " << t << " ms" <<endl;
-
-    if(op_vid) vid.release();
 
     return 0;
 }

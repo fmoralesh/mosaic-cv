@@ -11,7 +11,7 @@
 
 #include "args.hxx"
 
-args::ArgumentParser parser("Feature Detectors comparison", "Author: Victor Garcia");
+args::ArgumentParser parser("Stitch module", "Author: Victor Garcia");
 args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
 
 args::Group sub_p(parser, "", args::Group::Validators::AtLeastOne);
@@ -22,7 +22,6 @@ args::Flag op_flann(op_matcher, "Flann", "Flann force matcher (default)", {'f'})
 
 args::Group op_data(sub_p, "Select imput data:", args::Group::Validators::AtMostOne);
 args::ValueFlagList<std::string> op_img(op_data, "ImageName", "Image imput name. Mus specify two file names (one per flag)",{'i'});
-args::ValueFlag<std::string> op_vid(op_data, "VideoName", "Video imput name",{'v'});
 args::ValueFlag<std::string> op_dir(op_data,"","Directory to load the frames. (Not yet implemented)",{'d'});
 
 args::Group optional(parser, "(Optional)", args::Group::Validators::DontCare);
