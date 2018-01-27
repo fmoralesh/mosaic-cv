@@ -45,6 +45,6 @@ std::vector<std::string> read_filenames(const std::string dir_ent);
  * @param keypoints 
  * @param descriptors 
  */
-vector<DMatch> gridDetector(vector<KeyPoint> keypoints, vector<DMatch> matches);
+std::vector<cv::DMatch> gridDetector(std::vector<cv::KeyPoint> keypoints, std::vector<cv::DMatch> matches);
 
 #endif

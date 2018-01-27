@@ -15,6 +15,9 @@
 #define TARGET_WIDTH	640   
 #define TARGET_HEIGHT	480 
 
+const std::string green("\033[1;32m");
+const std::string reset("\033[0m");
+
 /// User namespaces
 using namespace std;
 using namespace cv;
@@ -146,7 +149,7 @@ int main( int argc, char** argv ) {
         n_matches = descriptors[0].rows;
         // Discard the bad matches (outliers)
         good_matches = getGoodMatches(n_matches - 1, matches);
-        gridDetector(keypoints[0], good_matches);
+        good_matches = gridDetector(keypoints[0], good_matches);
 
         n_good = good_matches.size();
         tot_matches+=n_matches;
@@ -154,7 +157,7 @@ int main( int argc, char** argv ) {
 
         cout << "Pair  "<< n_img++ <<" -- -- -- -- -- -- -- -- -- --"  << endl;
         cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
-        cout << "-- Good Matches      ["<< n_good <<"]"  << endl;
+        cout << "-- Good Matches      ["<<green<<n_good<<reset<<"]"  << endl;
         // for output command ( -o )
         if(op_out){
             Mat img_matches;
@@ -174,7 +177,7 @@ int main( int argc, char** argv ) {
     }
     cout << "\nTotal "<< n_img <<" -- -- -- -- -- -- -- -- -- --"  << endl;
     cout << "-- Total Possible matches  ["<< tot_matches <<"]"  << endl;
-    cout << "-- Total Good Matches      ["<< tot_good <<"]"  << endl;
+    cout << "-- Total Good Matches      ["<<green<<tot_good<<reset<<"]"  << endl;
     t = 1000 * ((double) getTickCount() - t) / getTickFrequency();        
     cout << "   Execution time: " << t << " ms" <<endl;
 
