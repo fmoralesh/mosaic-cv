@@ -4,6 +4,9 @@ using namespace std;
 using namespace cv;
 using namespace cv::xfeatures2d;
 
+#define TARGET_WIDTH	640   
+#define TARGET_HEIGHT	480 
+
 // See description in header file
 std::vector<DMatch> getGoodMatches(int n_matches, std::vector<std::vector<cv::DMatch> > matches){
     vector<DMatch> good_matches;
@@ -20,34 +23,31 @@ std::vector<DMatch> getGoodMatches(int n_matches, std::vector<std::vector<cv::DM
 }
 
 // See description in header file
-void gridDetector(cv::Mat src[2], cv::Ptr<cv::KAZE> detector, std::vector<cv::KeyPoint> keypoints[2], cv::Mat descriptors[2]){
-    int stepx=64, stepy=48;
-    Rect roi(0, 0, stepx, stepy);
-    vector<KeyPoint> aux_keypoint;
-    Mat aux_descriptor(0, detector->descriptorSize(), detector->descriptorType());
-    // Define the number of columns based on descriptor type
-    descriptors[0].create(0, detector->descriptorSize(), detector->descriptorType());
-
-    // Detect keypoints in first image in sections of size stepx * stepy
-    // number of iterations fixed to 10x10 -> 10*64 x 10*48 = TARGET_WIDHT x TARGET_HEIGHT
+vector<DMatch> gridDetector(vector<KeyPoint> keypoints, vector<DMatch> matches){
+    int stepx=TARGET_WIDTH/10, stepy=TARGET_HEIGHT/10;
+    vector<DMatch> grid_matches;
+    int best_distance = 100;
+    DMatch best_match;
+    
     for(int i=0; i<10; i++){
         for(int j=0; j<10; j++){
-            // move the region of interest to the next section
-            roi.x = stepx*i;
-            roi.y = stepy*j;
-            detector->detectAndCompute( src[0](roi), Mat(), aux_keypoint, aux_descriptor);
-            // save the new descriptors in the original descriptors matrix
-            vconcat(descriptors[0], aux_descriptor, descriptors[0]);
-            // save the new keypoints in the original Keypoints vector
-            for(auto kp: aux_keypoint){
-                kp.pt.x += stepx*i;
-                kp.pt.y += stepy*j;
-                keypoints[0].push_back(kp);
+            best_distance = 100;
+            for (auto m: matches) {
+                //-- Get the keypoints from the good matches
+                if(keypoints[m.queryIdx].pt.x >= stepx*i && keypoints[m.queryIdx].pt.x < stepx*(i+1) &&
+                keypoints[m.queryIdx].pt.y >= stepy*j && keypoints[m.queryIdx].pt.y < stepy*(j+1)){
+                    if(m.distance < best_distance){
+                        best_distance = m.distance;
+                        best_match = m;
+                    }
+                    matches.erase(matches.begin() + m.queryIdx);  
+                }
             }
+            if(best_distance != 100)
+                grid_matches.push_back(best_match);
         }
     }
-    // Compute the keypoints and descriptors of the second image
-    detector->detectAndCompute( src[1], Mat(), keypoints[1], descriptors[1]);
+    return grid_matches;
 }
 
 // See description in header file

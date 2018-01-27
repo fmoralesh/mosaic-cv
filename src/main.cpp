@@ -16,6 +16,9 @@
 #define TARGET_WIDTH	640   
 #define TARGET_HEIGHT	480 
 
+const std::string green("\033[1;32m");
+const std::string reset("\033[0m");
+
 /// User namespaces
 using namespace std;
 using namespace cv;
@@ -107,7 +110,6 @@ int main( int argc, char** argv ) {
             return -1;
         }
     }
-
     string dir_ent;
     if(op_dir){
         dir_ent = args::get(op_dir);
@@ -115,7 +117,7 @@ int main( int argc, char** argv ) {
         n_iter = file_names.size()-1;
     }
     t = (double) getTickCount();
-    for(i=0; i<n_iter; i++){
+    for(i=0; i<n_iter; i+=step_iter){
         if(op_dir){
             img[0] = imread(dir_ent+"/"+file_names[i++],IMREAD_COLOR);
             img[1] = imread(dir_ent+"/"+file_names[i],IMREAD_COLOR);
@@ -137,9 +139,8 @@ int main( int argc, char** argv ) {
         // Detect the keypoints using desired Detector and compute the descriptors
         keypoints[0].clear();
         keypoints[1].clear();
-        // detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
-        // detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
-        gridDetector(img, detector, keypoints, descriptors);
+        detector->detectAndCompute( img[0], Mat(), keypoints[0], descriptors[0] );
+        detector->detectAndCompute( img[1], Mat(), keypoints[1], descriptors[1] );
 
         if(!keypoints[0].size() || !keypoints[1].size()){
             cout << "No Key points Found" <<  endl;
@@ -152,15 +153,15 @@ int main( int argc, char** argv ) {
         n_matches = descriptors[0].rows;
         // Discard the bad matches (outliers)
         good_matches = getGoodMatches(n_matches - 1, matches);
-        //good_matches = matches;
-        n_good = good_matches.size();
+        good_matches = gridDetector(keypoints[0], good_matches);
 
+        n_good = good_matches.size();
         tot_matches+=n_matches;
         tot_good+=n_good;
 
         cout << "Pair  "<< n_img++ <<" -- -- -- -- -- -- -- -- -- --"  << endl;
         cout << "-- Possible matches  ["<< n_matches <<"]"  << endl;
-        cout << "-- Good Matches      ["<<green<< n_good <<reset<<"]"  << endl;
+        cout << "-- Good Matches      ["<<green<<n_good<<reset<<"]"  << endl;
         // for output command ( -o )
 
         vector<Point2f> img1, img2;
@@ -209,7 +210,7 @@ int main( int argc, char** argv ) {
     }
     cout << "\nTotal "<< n_img <<" -- -- -- -- -- -- -- -- -- --"  << endl;
     cout << "-- Total Possible matches  ["<< tot_matches <<"]"  << endl;
-    cout << "-- Total Good Matches      ["<<green<< tot_good <<reset<<"]"  << endl;
+    cout << "-- Total Good Matches      ["<<green<<tot_good<<reset<<"]"  << endl;
     t = 1000 * ((double) getTickCount() - t) / getTickFrequency();        
     cout << "   Execution time: " << t << " ms" <<endl;
 
