@@ -154,6 +154,14 @@ int main( int argc, char** argv ) {
         // Discard the bad matches (outliers)
         good_matches = getGoodMatches(n_matches - 1, matches);
         good_matches = gridDetector(keypoints[0], good_matches);
+        Rect r1 = Rect(0,0,64,48);
+        for(int i=0; i<10; i++){
+            for(int j=0; j<10; j++){
+                r1.x = i*64;
+                r1.y = j*48;
+                rectangle(img[0],r1,Scalar(255,255,255),2);
+            }
+        }
 
         n_good = good_matches.size();
         tot_matches+=n_matches;
@@ -178,12 +186,16 @@ int main( int argc, char** argv ) {
         offset.width  = abs(min(0,bound.x));
         offset.height = abs(min(0,bound.y));
 
-        dim.width  = bound.width  + offset.width  + max(0, bound.x);
-        dim.height = bound.height + offset.height + max(0, bound.y);
+        dim.width  = bound.width  + abs(bound.x);
+        dim.height = bound.height + abs(bound.y);
 
-        translateImg(img_ori[1], offset.width, offset.height);
+        img_ori[0] = translateImg(img_ori[0], offset.width, offset.height);
+        cout << offset << endl;
+        cout << img_ori[0].size() << endl;
 
         warpPerspective(img_ori[0],result,H,dim);
+        imshow("test",result);
+        waitKey(0);
         cv::Mat half(result,cv::Rect(offset.width, offset.height, img_ori[1].cols, img_ori[1].rows));
         img_ori[1].copyTo(half);
         //result = translateImg(result, 200, 200);

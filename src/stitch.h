@@ -19,6 +19,6 @@
 
 cv::Rect getBound(cv::Mat H, int width, int height);
 
-cv::Mat translateImg(cv::Mat &img, int offsetx, int offsety);
+cv::Mat translateImg(cv::Mat img, int offsetx, int offsety);
 
 #endif

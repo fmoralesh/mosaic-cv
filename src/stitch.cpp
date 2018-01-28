@@ -26,8 +26,9 @@ Rect getBound(Mat H, int width, int height){
 	return boundingRect(points);
 }
 
-Mat translateImg(Mat &img, int offsetx, int offsety){
+Mat translateImg(Mat img, int offsetx, int offsety){
     Mat t_img = (Mat_<double>(2,3) << 1, 0, offsetx, 0, 1, offsety);
-    warpAffine(img,img,t_img,img.size());
-    return t_img;
+		Mat result;
+    warpAffine(img,result,t_img,Size(img.cols+offsetx, img.rows+offsety));
+    return result;
 }
