@@ -26,11 +26,12 @@ std::vector<DMatch> getGoodMatches(int n_matches, std::vector<std::vector<cv::DM
 vector<DMatch> gridDetector(vector<KeyPoint> keypoints, vector<DMatch> matches){
     int stepx=TARGET_WIDTH/10, stepy=TARGET_HEIGHT/10;
     vector<DMatch> grid_matches;
-    int best_distance = 100;
+    int k=0, best_distance = 100;
     DMatch best_match;
     
     for(int i=0; i<10; i++){
         for(int j=0; j<10; j++){
+            k=0;
             best_distance = 100;
             for (auto m: matches) {
                 //-- Get the keypoints from the good matches
@@ -40,8 +41,9 @@ vector<DMatch> gridDetector(vector<KeyPoint> keypoints, vector<DMatch> matches){
                         best_distance = m.distance;
                         best_match = m;
                     }
-                    matches.erase(matches.begin() + m.queryIdx);  
+                    matches.erase(matches.begin() + k);  
                 }
+                k++;
             }
             if(best_distance != 100)
                 grid_matches.push_back(best_match);

@@ -9,8 +9,8 @@
 
 #include "options.h"
 #include "detector.h"
+#include "stitch.h"
 #include "preprocessing.h"
-#include "opencv2/stitching.hpp"
 
 /// Dimensions to resize images
 #define TARGET_WIDTH	640   
@@ -23,9 +23,6 @@ const std::string reset("\033[0m");
 using namespace std;
 using namespace cv;
 using namespace cv::xfeatures2d;
-
-const std::string green("\033[1;32m");
-const std::string reset("\033[0m");
 
 /*
  * @function main
@@ -110,6 +107,9 @@ int main( int argc, char** argv ) {
             return -1;
         }
     }
+    // n_iter = 1;
+    // img[0] = imread("frames/MVI_0752/fout0004.jpg",1);
+    // img[1] = imread("frames/MVI_0752/fout0005.jpg",1);
     string dir_ent;
     if(op_dir){
         dir_ent = args::get(op_dir);
@@ -117,7 +117,7 @@ int main( int argc, char** argv ) {
         n_iter = file_names.size()-1;
     }
     t = (double) getTickCount();
-    for(i=0; i<n_iter; i+=step_iter){
+    for(i=0; i<n_iter; i++){
         if(op_dir){
             img[0] = imread(dir_ent+"/"+file_names[i++],IMREAD_COLOR);
             img[1] = imread(dir_ent+"/"+file_names[i],IMREAD_COLOR);
@@ -128,7 +128,7 @@ int main( int argc, char** argv ) {
         img_ori[0] = img[0].clone();
         img_ori[1] = img[1].clone();
         // Apply pre-processing algorithm if selected
-        if(op_pre){
+        if(1){//op_pre){
             colorChannelStretch(img[0], img[0], 1, 99);
             colorChannelStretch(img[1], img[1], 1, 99);
         }
@@ -170,15 +170,26 @@ int main( int argc, char** argv ) {
             img1.push_back(keypoints[0][good_matches[i].queryIdx].pt);
             img2.push_back(keypoints[1][good_matches[i].trainIdx].pt);
         }
-
+        Mat result;
+        Size dim, offset;
         Mat H = findHomography(Mat(img1), Mat(img2), CV_RANSAC);
+        Rect bound = getBound(H, TARGET_WIDTH, TARGET_HEIGHT);
 
-        cv::Mat result;
-        warpPerspective(img_ori[0],result,H,cv::Size(img_ori[0].cols ,img_ori[1].rows + img_ori[0].rows));
-        cv::Mat half(result,cv::Rect(0,0,img_ori[1].cols,img_ori[1].rows));
+        offset.width  = abs(min(0,bound.x));
+        offset.height = abs(min(0,bound.y));
+
+        dim.width  = bound.width  + offset.width  + max(0, bound.x);
+        dim.height = bound.height + offset.height + max(0, bound.y);
+
+        translateImg(img_ori[1], offset.width, offset.height);
+
+        warpPerspective(img_ori[0],result,H,dim);
+        cv::Mat half(result,cv::Rect(offset.width, offset.height, img_ori[1].cols, img_ori[1].rows));
         img_ori[1].copyTo(half);
-        imshow("fsdf",result);
+        //result = translateImg(result, 200, 200);
+        imshow("test",result);
         waitKey(0);
+
         // cv::Mat result;
         // warpPerspective(img[1], result, H, cv::Size(img[1].cols + img[0].cols, img[1].rows*2), INTER_CUBIC);
 
@@ -204,7 +215,7 @@ int main( int argc, char** argv ) {
             waitKey(0);
         }
         img[0].release();
-        img[0].release();
+        img[1].release();
         descriptors[0].release();
         descriptors[1].release();
     }

@@ -38,12 +38,11 @@ std::vector<cv::DMatch> getGoodMatches(const int n_matches, const std::vector<st
 std::vector<std::string> read_filenames(const std::string dir_ent);
 
 /**
- * @brief 
- * 
- * @param src 
- * @param detector 
- * @param keypoints 
- * @param descriptors 
+ * @brief Select the best frame for each regular section of the image
+ * @function gridDetector(std::vector<cv::KeyPoint> keypoints, std::vector<cv::DMatch> matches)
+ * @param keypoints Opecv Keypoint data that contains the position of each keypoint 
+ * @param matches Opencv keypoint Match contains information of distance for each match
+ * @return std::vector<cv::DMatch> Vector containing the selected matches
  */
 std::vector<cv::DMatch> gridDetector(std::vector<cv::KeyPoint> keypoints, std::vector<cv::DMatch> matches);
 
