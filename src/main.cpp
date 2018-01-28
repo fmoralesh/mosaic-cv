@@ -154,14 +154,6 @@ int main( int argc, char** argv ) {
         // Discard the bad matches (outliers)
         good_matches = getGoodMatches(n_matches - 1, matches);
         good_matches = gridDetector(keypoints[0], good_matches);
-        Rect r1 = Rect(0,0,64,48);
-        for(int i=0; i<10; i++){
-            for(int j=0; j<10; j++){
-                r1.x = i*64;
-                r1.y = j*48;
-                rectangle(img[0],r1,Scalar(255,255,255),2);
-            }
-        }
 
         n_good = good_matches.size();
         tot_matches+=n_matches;
