@@ -76,7 +76,7 @@ int main( int argc, char** argv ) {
         std::cerr << "Use -h, --help command to see usage" << std::endl;
         return 1;
     }
-    
+   
     int minHessian = 400;
     Ptr<KAZE> detector = KAZE::create();
     Ptr<DescriptorMatcher> matcher;
@@ -164,36 +164,18 @@ int main( int argc, char** argv ) {
         cout << "-- Good Matches      ["<<green<<n_good<<reset<<"]"  << endl;
         // for output command ( -o )
 
-        vector<Point2f> img1, img2;
+        vector<Point2f> img0, img1;
         for (int i = 0; i < good_matches.size(); i ++) {
             //-- Get the keypoints from the good matches
-            img1.push_back(keypoints[0][good_matches[i].queryIdx].pt);
-            img2.push_back(keypoints[1][good_matches[i].trainIdx].pt);
+            img0.push_back(keypoints[0][good_matches[i].queryIdx].pt);
+            img1.push_back(keypoints[1][good_matches[i].trainIdx].pt);
         }
-        Mat result;
-        Size dim, offset;
-        Mat H = findHomography(Mat(img1), Mat(img2), CV_RANSAC);
-        Rect bound = getBound(H, TARGET_WIDTH, TARGET_HEIGHT);
 
-        offset.width  = abs(min(0,bound.x));
-        offset.height = abs(min(0,bound.y));
-
-        dim.width  = bound.width  + abs(bound.x);
-        dim.height = bound.height + abs(bound.y);
-
-        img_ori[0] = translateImg(img_ori[0], offset.width, offset.height);
-        cout << offset << endl;
-        cout << img_ori[0].size() << endl;
-
-        warpPerspective(img_ori[0],result,H,dim);
-        imshow("test",result);
+        Mat H = findHomography(Mat(img0), Mat(img1), CV_RANSAC);
+        
+        Mat result = stitch(img_ori[0], img_ori[1], H);
+        imshow("STITCH",result);
         waitKey(0);
-        cv::Mat half(result,cv::Rect(offset.width, offset.height, img_ori[1].cols, img_ori[1].rows));
-        img_ori[1].copyTo(half);
-        //result = translateImg(result, 200, 200);
-        imshow("test",result);
-        waitKey(0);
-
         // cv::Mat result;
         // warpPerspective(img[1], result, H, cv::Size(img[1].cols + img[0].cols, img[1].rows*2), INTER_CUBIC);
 
@@ -223,6 +205,7 @@ int main( int argc, char** argv ) {
         descriptors[0].release();
         descriptors[1].release();
     }
+
     cout << "\nTotal "<< n_img <<" -- -- -- -- -- -- -- -- -- --"  << endl;
     cout << "-- Total Possible matches  ["<< tot_matches <<"]"  << endl;
     cout << "-- Total Good Matches      ["<<green<<tot_good<<reset<<"]"  << endl;

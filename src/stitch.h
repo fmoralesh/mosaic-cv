@@ -10,8 +10,9 @@
 #define STITCH_H
 
 #include <opencv2/core.hpp>
-#include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include "opencv2/imgcodecs.hpp"
+#include "opencv2/highgui.hpp"
 #include <iostream>
 
 #define TARGET_WIDTH	640   
@@ -19,6 +20,7 @@
 
 cv::Rect getBound(cv::Mat H, int width, int height);
 
-cv::Mat translateImg(cv::Mat img, int offsetx, int offsety);
+
+cv::Mat stitch(cv::Mat obj, cv::Mat scene, cv::Mat H);
 
 #endif
